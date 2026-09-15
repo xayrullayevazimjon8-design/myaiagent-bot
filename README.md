@@ -12,8 +12,8 @@ Bot **Gemini**, **Claude** va **OpenAI** bilan ishlay oladi. Qaysi biri ishlashi
 
 | `AI_PROVIDER` | Model | Izoh |
 |---|---|---|
-| `gemini` | `gemini-3.8-flash` | Bepul, lekin kuniga 20 so'rov |
-| `claude` (standart) | `claude-haiku-4-5` | Tez va arzon; fikrlash o'chirilgan |
+| `gemini` (joriy) | `gemini-3.8-flash` | Bepul tarifda limit juda past |
+| `claude` | `claude-haiku-4-5` | Tez va arzon; fikrlash o'chirilgan |
 | `openai` | `gpt-6-astra` | Hisobda kredit kerak |
 
 Noto'g'ri qiymat yozilsa bot to'xtamaydi — logga ogohlantirish yozib, `gemini` ga qaytadi.

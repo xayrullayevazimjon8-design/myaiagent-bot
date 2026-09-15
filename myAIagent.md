@@ -14,7 +14,7 @@ Vercel'da serverless funksiya sifatida ishlaydi.
 
 | | |
 |---|---|
-| Ishlayotgan model | `claude-haiku-4-5` |
+| Ishlayotgan model | `gemini-3.8-flash` |
 | Javob tezligi | 1.0–1.6 s |
 | Kirish nuqtasi | `api/bot.js` |
 | Deploy | `main` ga push → Vercel avtomatik |
@@ -154,13 +154,19 @@ Gemini'ga oddiy savol berilganda haqiqiy hisob:
 Xarajatning 65% foydalanuvchi ko'rmaydigan ichki fikrlashga ketgan. Shuning uchun
 Gemini'da `thinking_level: low`, Haiku'da fikrlash butunlay o'chirilgan.
 
-### Gemini bepul limiti — kuniga atigi 20 so'rov
+### Gemini bepul limiti juda past
 
 ```
 Quota exceeded: generate_content_free_tier_requests, limit: 20, model: gemini-3.8-flash
 ```
 
-Sinov paytida limit tugadi. Botni bir necha kishi ishlatsa, yarim kunda tugaydi.
+Sinov paytida limit tugadi va bir necha soatdan keyin ham tiklanmadi.
+**Limit 20, lekin oynasi (daqiqami, kunmi) noma'lum** — xato xabarida ko'rsatilmagan,
+rasmiy hujjat ham aniq raqam bermaydi, AI Studio paneliga yo'naltiradi.
+Xatodagi "retry in Xs" maslahati o'zgaruvchan (7s dan 58s gacha) va ishonchli emas.
+
+Yechim — Google Cloud loyihasiga **billing ulash**: shunda loyiha Tier 1 ga o'tadi
+va bu chegara yo'qoladi.
 
 ### Kalit yo'q bo'lsa SDK chalg'ituvchi xato beradi
 
