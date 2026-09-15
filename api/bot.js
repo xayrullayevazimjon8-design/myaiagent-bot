@@ -1,7 +1,9 @@
 // Telegram bot — webhook kirish nuqtasi.
 // Telegram yangi xabar kelganda shu manzilga POST qiladi: https://<domain>/api/bot
 //
-// 1-bosqich: AI yo'q. Bot kelgan matnni shunchaki qaytaradi (echo).
+// 2-bosqich: matnli xabarlar Claude'ga yuboriladi.
+import { waitUntil } from '@vercel/functions';
+import { askClaude, splitMessage, errorMessage } from '../lib/claude.js';
 
 const TELEGRAM_API = 'https://api.telegram.org';
 
@@ -26,22 +28,50 @@ async function sendMessage(chatId, text) {
   return res.ok;
 }
 
-// Kelgan matnga qanday javob berishni shu funksiya hal qiladi.
-// Keyingi bosqichda AI qo'shilganda aynan shu joy o'zgaradi.
-export function buildReply(text) {
+// "yozmoqda..." holati — AI javobi bir necha soniya olishi mumkin,
+// foydalanuvchi bot qotib qolgan deb o'ylamasligi uchun.
+async function sendTyping(chatId) {
+  try {
+    await fetch(apiUrl('sendChatAction'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
+    });
+  } catch (err) {
+    console.error('sendChatAction xato:', err);
+  }
+}
+
+// Buyruqlarga AI'siz, lokal javob. null qaytsa — xabar Claude'ga ketadi.
+export function commandReply(text) {
   if (text.startsWith('/start')) {
-    return 'Salom! Men hozircha sinov rejimidaman — yozgan xabaringizni qaytaraman.';
+    return 'Salom! Men Claude asosida ishlaydigan botman. Savolingizni yozing.';
   }
   if (text.startsWith('/help')) {
     return [
-      'Menga istalgan matn yozing — men uni qaytaraman.',
+      'Shunchaki savolingizni yoki matnni yozing — men javob beraman.',
       '',
       'Buyruqlar:',
       '/start — boshlash',
       '/help — shu yordam',
     ].join('\n');
   }
-  return `Siz yozdingiz: ${text}`;
+  return null;
+}
+
+// AI javobini tayyorlab yuborish. 200 qaytarilgandan keyin fonda ishlaydi.
+async function replyWithAi(chatId, text) {
+  await sendTyping(chatId);
+
+  try {
+    const answer = await askClaude(text);
+    for (const part of splitMessage(answer)) {
+      await sendMessage(chatId, part);
+    }
+  } catch (err) {
+    console.error('Claude xato:', err);
+    await sendMessage(chatId, errorMessage(err));
+  }
 }
 
 // So'rov tanasini o'qish. Vercel odatda o'zi JSON'ga aylantiradi,
@@ -66,7 +96,6 @@ export default async function handler(req, res) {
   }
 
   // Ixtiyoriy himoya: secret o'rnatilgan bo'lsa, Telegram yuborgan sarlavhani tekshiramiz.
-  // Bu begona odam webhook manzilingizga so'rov yuborishining oldini oladi.
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
   if (secret && req.headers['x-telegram-bot-api-secret-token'] !== secret) {
     console.warn('Notog\'ri secret token bilan so\'rov keldi');
@@ -79,11 +108,18 @@ export default async function handler(req, res) {
     const chatId = message?.chat?.id;
     const text = message?.text?.trim() ?? '';
 
-    if (chatId && text) {
-      await sendMessage(chatId, buildReply(text));
-    } else if (chatId) {
+    if (chatId && !text) {
       // Rasm, stiker, ovozli xabar va hokazo.
       await sendMessage(chatId, 'Hozircha faqat matnli xabarlarni tushunaman.');
+    } else if (chatId) {
+      const command = commandReply(text);
+      if (command) {
+        await sendMessage(chatId, command);
+      } else {
+        // Telegram 60 soniyada javob kutadi, kutmasa xabarni qayta yuboradi.
+        // Shuning uchun AI chaqiruvini javobdan keyinga qoldiramiz.
+        waitUntil(replyWithAi(chatId, text));
+      }
     }
   } catch (err) {
     // Xatoni yutamiz: aks holda Telegram xabarni qayta-qayta yuboraveradi.
