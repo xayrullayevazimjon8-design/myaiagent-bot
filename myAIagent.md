@@ -3,6 +3,10 @@
 Telegram bot: webhook orqali kelgan xabarni AI'ga yuboradi va javobni qaytaradi.
 Vercel'da serverless funksiya sifatida ishlaydi.
 
+Botning nomi **Jarvis** — Prestigious (sayt yaratish) biznesining assistenti.
+Mijozdan sohasini so'rab, bir necha savol berib, mos ta'rifni taklif qiladi.
+Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
+
 **Sana:** 2026-09-15
 **Bot:** [@myAIagent_25_bot](https://t.me/myAIagent_25_bot)
 **Repo:** `xayrullayevazimjon8-design/myaiagent-bot` (public)
@@ -16,10 +20,13 @@ Vercel'da serverless funksiya sifatida ishlaydi.
 |---|---|
 | Ishlayotgan model | `gemini-3.8-flash` |
 | System prompt hajmi | ~8600 belgi (~3300 token) |
-| Javob tezligi | 1.0–1.6 s |
+| Javob tezligi | 4–6 s (o'rtacha 4.8 s) |
 | Kirish nuqtasi | `api/bot.js` |
 | Deploy | `main` ga push → Vercel avtomatik |
 | Xato darajasi | 0% |
+| Xarakter | `xarakter.md` — Jarvis |
+| Bilim bazasi | `bilim/` — 4 fayl, ~5000 belgi |
+| Provayderlar | Gemini (joriy), Claude, OpenAI — `AI_PROVIDER` bilan almashtiriladi |
 
 ### Fayl tuzilishi
 
@@ -80,10 +87,13 @@ belgilaydi — kod o'zgartirilmaydi, Vercel'da bitta qiymat almashtiriladi.
 "Yozmoqda..." holati takrorlanadigan qilindi, ichki vaqt chegarasi qo'yildi,
 kalitlarni oldindan tekshirish qo'shildi.
 
-### 5-bosqich — Haiku 4.5
+### 5-bosqich — Claude, keyin Haiku 4.5
 
-Anthropic hisobiga kredit qo'shilgach bot Claude'ga o'tkazildi, keyin
-`claude-opus-5` dan `claude-haiku-4-5` ga tushirildi.
+Anthropic hisobiga kredit qo'shilgach bot Claude'ga o'tkazildi (`claude-opus-5`,
+2.2 s), keyin arzonroq va tezroq `claude-haiku-4-5` ga tushirildi (1.0–1.6 s).
+
+Haiku'ga o'tish bir qatorlik ish bo'lmadi: u adaptiv fikrlashni ham,
+`output_config.effort` ni ham qabul qilmaydi — ikkalasi olib tashlandi.
 
 ### 6-bosqich — xarakter
 
@@ -104,6 +114,16 @@ yozildi: endi ta'rif narxlarini aytadi, lekin yangi raqam o'ylab topmaydi va
 aniq hisob-kitobda egaga yo'naltiradi. Bot avval mijozning sohasini so'rab,
 bir-ikki savol berib, mos ta'rifni taklif qiladi.
 
+### 8-bosqich — Gemini'ga qaytish
+
+Haiku 4.5 ning o'zbekcha grammatikasi qoniqarsiz chiqdi: "Prestigious's Telegram
+assistentiman", "kelishaadi", "tushinib" kabi xatolar. Xarakter fayliga til qoidasi
+qo'shildi va yaxshilandi, lekin prompt model darajasidagi kamchilikni to'liq yopa
+olmaydi.
+
+Google Cloud loyihasiga billing ulangach Gemini'ning limiti ochildi va bot
+`gemini-3.8-flash` ga qaytarildi. O'zbekchasi sezilarli yaxshi, tezligi 4.8 s.
+
 ---
 
 ## 3. O'lchovlar
@@ -112,9 +132,13 @@ bir-ikki savol berib, mos ta'rifni taklif qiladi.
 
 | Model | Vaqt |
 |---|---|
-| Gemini 3.8 Flash | 32.1 s *(production logi)* |
+| Gemini 3.8 Flash — fikrlash standart (`medium`) | 32.1 s *(production logi)* |
+| **Gemini 3.8 Flash — `thinking_level: low`** | **4.8 s** *(joriy)* |
 | Claude Opus 5 | 2.2 s |
-| **Claude Haiku 4.5** | **1.0–1.6 s** |
+| Claude Haiku 4.5 | 1.0–1.6 s |
+
+`thinking_level: low` javobni **6-7 barobar** tezlashtirdi. Bu sozlama ancha oldin
+qo'shilgan edi, lekin bepul limit tugagani sababli uzoq vaqt o'lchab bo'lmadi.
 
 ### O'zbekcha matn tokenlari
 
@@ -237,6 +261,53 @@ ajratadi. Mavjud nomlar takrorlansa Save bloklanadi, xato esa dialogning eng
 pastida, ko'rinmaydigan joyda chiqadi — tugma sababsiz ishlamayotgandek tuyuladi.
 Kalitni **Value** maydoniga qo'yish kerak.
 
+### Haiku 4.5 ning o'zbekchasi zaif
+
+Bir xil promptda Haiku 4.5 shunday xatolar berdi: "Prestigious's Telegram
+assistentiman" (ingliz egalik shakli), "kelishaadi", "tushinib". Gemini 3.8 Flash
+xuddi shu vazifada toza yozdi.
+
+Xarakter fayliga "to'g'ri o'zbek tilida yoz, ingliz shakllarini aralashtirma" qoidasi
+qo'shilgach yaxshilandi, lekin **prompt model darajasidagi til kamchiligini to'liq
+yopa olmaydi.** O'zbek tilida ishlaydigan bot uchun model tanlashda til sifati
+tezlik va narxdan muhimroq bo'lishi mumkin.
+
+### Billing ulanganda API kalit o'zgarmaydi
+
+Gemini'da limitni ochish uchun Google Cloud loyihasiga billing ulanadi. Kalit
+loyihaga tegishli bo'lgani uchun **eskisi ishlayveradi** — yangi kalit olish,
+Vercel'dagi qiymatni yangilash shart emas. Sinovda tasdiqlandi.
+
+### Vercel .md fayllarni funksiyaga o'z-o'zidan joylamaydi
+
+`xarakter.md` va `bilim/` papkasi kodda emas, matn fayllarda. Vercel esa funksiyaga
+faqat kod bog'liqliklarini joylaydi. `vercel.json` dagi `includeFiles` bo'lmasa bot
+lokalda ishlaydi-yu, deploy'da xarakterini ham, bilimini ham yo'qotadi:
+
+```json
+"includeFiles": "{xarakter.md,bilim/**}"
+```
+
+Ikkalasi ham topilmasa bot to'xtamaydi — zaxira promptga o'tadi va logga
+ogohlantirish yozadi.
+
+### Prompt ichidagi ziddiyat javoblarni tasodifiy qiladi
+
+`xarakter.md` da "aniq narx aytmaysan, taxminiy raqam ham aytma" degan qoida bor
+edi. Bilim bazasiga narxlar qo'shilgach ikkalasi bir-biriga zid bo'lib qoldi.
+
+Model bunday holatda qaysi biriga bo'ysunishni o'zi tanlaydi va javoblari oldindan
+aytib bo'lmaydigan bo'lib qoladi. Xarakter va bilim bazasi bir-biriga zid
+bo'lmasligini har o'zgarishda tekshirish kerak.
+
+### Bilim bazasi har so'rovda qayta yuboriladi
+
+System prompt 160 tokendan ~3300 tokenga o'sdi — butun baza har savolda uzatiladi.
+1000 muloqot narxi ~$1.90 dan ~$3.00 ga ko'tarildi.
+
+Baza o'sgani sari bu raqam ham o'sadi. Kerak bo'lganda prompt keshlash yoqiladi:
+o'zgarmas qism ancha arzon hisoblanadi.
+
 ---
 
 ## 5. Amaliy qo'llanma
@@ -248,6 +319,17 @@ Vercel → Settings → Environment Variables → `AI_PROVIDER` qiymatini o'zgar
 
 Env var faqat yangi deploy'ga tushadi. "Needs Attention" yorlig'i aynan shuni
 eslatadi, u xato emas.
+
+### Bilim bazasini tahrirlash
+
+`bilim/` papkasidagi `.md` faylni o'zgartiring va push qiling — Vercel o'zi deploy
+qiladi. Kodga tegish shart emas, yangi fayl qo'shsangiz ham `lib/bilim.js` o'zi
+topadi.
+
+Xuddi shu tarzda `xarakter.md` botning gapirish uslubini boshqaradi.
+
+**Diqqat:** bazadagi ma'lumot bot uchun haqiqat. Noto'g'ri narx yoki muddat —
+mijozga aytilgan noto'g'ri va'da.
 
 ### Webhook
 
@@ -273,7 +355,8 @@ chaqirilgan tashqi API'larni ko'rish mumkin — nosozlik qidirishda eng foydali 
 | Masala | Holat |
 |---|---|
 | Kalitlar chatda yozilgan | Telegram, Gemini, OpenAI va Anthropic kalitlari suhbat tarixida qoldi — almashtirish tavsiya etiladi |
-| OpenAI | Hisobda kredit yo'q, kalit Vercel'ga qo'shilmagan |
-| Gemini tezligi | `thinking_level: low` dan keyin qayta o'lchanmagan (kunlik limit tugagan edi) |
+| OpenAI | Hisobda kredit yo'q, kalit Vercel'ga qo'shilmagan. Kod tayyor |
+| Bilim bazasi to'ldirilmagan | `bilim/` fayllarida `<!-- NAMUNA — to'ldiring -->` belgilari bor. Narxlar haqiqiy ($200/$500/$1000), qolgani namuna — bot ularni ishonch bilan aytadi |
+| Ta'rif tafsilotlari | Har bir ta'rifga nima kirishi aniqlanmagan, egasi keyinroq beradi |
 | Suhbat xotirasi | Yo'q — bot har xabarni alohida ko'radi, oldingi gaplarni eslamaydi |
 | `TELEGRAM_WEBHOOK_SECRET` | Kod tayyor, yoqilmagan |
