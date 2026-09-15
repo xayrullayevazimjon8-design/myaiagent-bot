@@ -15,6 +15,7 @@ Vercel'da serverless funksiya sifatida ishlaydi.
 | | |
 |---|---|
 | Ishlayotgan model | `gemini-3.8-flash` |
+| System prompt hajmi | ~8600 belgi (~3300 token) |
 | Javob tezligi | 1.0–1.6 s |
 | Kirish nuqtasi | `api/bot.js` |
 | Deploy | `main` ga push → Vercel avtomatik |
@@ -24,8 +25,10 @@ Vercel'da serverless funksiya sifatida ishlaydi.
 
 ```
 api/bot.js      # webhook handler — yagona kirish nuqtasi
-xarakter.md     # botning shaxsi (Jarvis) — system prompt
-lib/xarakter.js # xarakter.md ni o'qiydi
+xarakter.md     # botning shaxsi (Jarvis)
+bilim/          # bilim bazasi — 4 ta .md fayl
+lib/xarakter.js # xarakter + bilim bazasini jamlaydi
+lib/bilim.js    # bilim/ papkasini o'qiydi
 lib/ai.js       # qaysi AI ishlashini tanlaydi, vaqt chegarasi, xabarni bo'laklash
 lib/claude.js   # Claude chaqiruvi
 lib/gemini.js   # Gemini chaqiruvi
@@ -88,6 +91,18 @@ Bot Jarvis nomini oldi: Prestigious (sayt yaratish) biznesining assistenti.
 Shaxsi `xarakter.md` da, kodda emas. Chegaralar sinovdan o'tkazildi: aniq narx
 aytmaydi, shartnoma masalasida @azimjonAIagents ga yo'naltiradi, shaxsiy maslahat
 bermaydi, bilmagan narsani to'qimaydi.
+
+### 7-bosqich — bilim bazasi
+
+`bilim/` papkasi qo'shildi: xizmatlar, narxlar (Start $200 / V.I.P $500 /
+Premium $1000), savol-javob, ish vaqti. Fayllar o'zaro Obsidian havolalari bilan
+bog'langan. Har so'rovda to'liq baza kontekst sifatida uzatiladi va bot faqat
+shunga tayanib javob beradi.
+
+Xarakterdagi "aniq narx aytmaysan" qoidasi bazaga zid bo'lgani uchun qayta
+yozildi: endi ta'rif narxlarini aytadi, lekin yangi raqam o'ylab topmaydi va
+aniq hisob-kitobda egaga yo'naltiradi. Bot avval mijozning sohasini so'rab,
+bir-ikki savol berib, mos ta'rifni taklif qiladi.
 
 ---
 

@@ -213,3 +213,26 @@ nusxasi bor edi — birini tahrirlab ikkinchisini unutish oson edi.
 `vercel.json` dagi `includeFiles` muhim: Vercel funksiyaga faqat kerakli
 fayllarni joylaydi, `.md` fayl o'z-o'zidan tushmaydi. Busiz bot lokalda
 ishlaydi-yu, deploy'da zaxira promptga o'tib ketadi (logda ogohlantirish chiqadi).
+
+## Bilim bazasi
+
+[`bilim/`](bilim/) papkasidagi barcha `.md` fayllar har so'rovda AI'ga kontekst
+sifatida uzatiladi. Bot biznes haqidagi faktlarni **faqat shu yerdan** oladi —
+bazada yo'q narsani to'qimaydi, @azimjonAIagents ga yo'naltiradi.
+
+```
+bilim/xizmatlar.md     # qanday saytlar yasaladi
+bilim/narxlar.md       # Start $200 / V.I.P $500 / Premium $1000
+bilim/savol-javob.md   # ta'rifni aniqlash savollari va FAQ
+bilim/ish-vaqti.md     # ish vaqti va tayyorlash muddatlari
+```
+
+Fayllar bir-biriga Obsidian uslubida havola qiladi: `[[narxlar]]`, `[[ish-vaqti]]`.
+Papkani Obsidian'da ochsangiz bog'langan holda ko'rinadi.
+
+Yangi fayl qo'shsangiz kodga tegish shart emas — `lib/bilim.js` papkadagi hamma
+`.md` faylni o'zi topadi.
+
+**Diqqat:** `bilim/` ichidagi ma'lumot bot uchun haqiqat hisoblanadi. Noto'g'ri
+yozilgan narx yoki muddat — mijozga aytilgan noto'g'ri va'da. Fayllarda
+`<!-- NAMUNA — to'ldiring -->` belgisi bor joylar hali to'ldirilmagan.
