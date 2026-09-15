@@ -7,6 +7,9 @@ import { ask, splitMessage, errorMessage, providerName } from '../lib/ai.js';
 
 const TELEGRAM_API = 'https://api.telegram.org';
 
+// Telegram "yozmoqda..." holatini qancha vaqtda yangilash (u ~5 soniyada o'chadi).
+const TYPING_REFRESH_MS = 4000;
+
 // Telegram API manzilini yig'ish. Token faqat shu yerda o'qiladi.
 function apiUrl(method) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -63,6 +66,11 @@ export function commandReply(text) {
 async function replyWithAi(chatId, text) {
   await sendTyping(chatId);
 
+  // Telegram "yozmoqda..." holatini ~5 soniyada o'chiradi. AI javobi esa undan
+  // ancha uzoq tayyorlanadi — takrorlamasak, foydalanuvchi uzun jimlikni ko'rib
+  // bot ishlamayapti deb o'ylaydi.
+  const typing = setInterval(() => sendTyping(chatId), TYPING_REFRESH_MS);
+
   try {
     const answer = await ask(text);
     for (const part of splitMessage(answer)) {
@@ -71,6 +79,9 @@ async function replyWithAi(chatId, text) {
   } catch (err) {
     console.error(`AI xato (${providerName()}):`, err);
     await sendMessage(chatId, errorMessage(err));
+  } finally {
+    // Tozalash shart: taymer qolsa funksiya bo'sh turib vaqt sarflaydi.
+    clearInterval(typing);
   }
 }
 

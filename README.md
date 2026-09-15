@@ -158,3 +158,31 @@ metadata manzili) ga so'rov yuboradi va oxirida `Could not load the default
 credentials` deydi. Bu xatoda `status` ham, `code` ham bo'sh bo'ladi, shuning uchun
 foydalanuvchi eng umumiy "xatolik bo'ldi" matnini ko'radi va asl sabab —
 qo'yilmagan env var — loglarda ko'milib qoladi.
+
+## Kalit nomlari
+
+Har bir provayder avval o'z nomini qidiradi, topmasa umumiy `AI_API_KEY` ga qaraydi:
+
+```
+GEMINI_API_KEY → yo'q bo'lsa → AI_API_KEY
+ANTHROPIC_API_KEY → yo'q bo'lsa → AI_API_KEY
+OPENAI_API_KEY → yo'q bo'lsa → AI_API_KEY
+```
+
+Ya'ni bitta provayder ishlatsangiz `AI_API_KEY` yetarli, bir nechtasini yonma-yon
+saqlamoqchi bo'lsangiz alohida nomlarni ishlating.
+
+## Tezlik va chegaralar
+
+| Nima | Qiymat | Nega |
+|---|---|---|
+| "Yozmoqda..." yangilanishi | 4 s | Telegram bu holatni ~5 soniyada o'chiradi |
+| Ichki vaqt chegarasi | 45 s | Vercel 60 s da funksiyani **jimgina** o'ldiradi |
+| Gemini fikrlash darajasi | `low` | Standart `medium`da oddiy savolga 414 token fikrlash ketgan |
+
+45 soniyalik chegara muhim: Vercel limitiga urilsa funksiya xabarsiz to'xtaydi,
+Telegram esa allaqachon `200` olgani uchun qayta urinmaydi — foydalanuvchiga hech
+narsa kelmaydi va **logda ham xato qolmaydi**. Chegara shu holatning oldini oladi.
+
+> **Gemini bepul limiti — kuniga 20 so'rov** (`gemini-3.8-flash`). Tugaganda API
+> 429 qaytaradi va bot "kunlik limit tugagan" deb javob beradi. Bu kod xatosi emas.
