@@ -9,6 +9,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",
     "@google/genai": "^2.22.0",
-    "@vercel/functions": "^3.9.7"
+    "@vercel/functions": "^3.9.7",
+    "openai": "^7.15.0"
   }
 }

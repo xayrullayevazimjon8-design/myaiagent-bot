@@ -5,15 +5,16 @@ Webhook orqali ishlaydigan Telegram bot. Vercel'da serverless funksiya sifatida 
 **Joriy bosqich: 2 — AI javoblar.** Kelgan matn AI'ga yuboriladi.
 `/start` va `/help` AI'siz, lokal javob beradi.
 
-## Ikkita AI, bitta tugma
+## Uchta AI, bitta tugma
 
-Bot **Gemini** va **Claude** bilan ishlay oladi. Qaysi biri ishlashini `AI_PROVIDER`
-env var belgilaydi — kodni o'zgartirish shart emas:
+Bot **Gemini**, **Claude** va **OpenAI** bilan ishlay oladi. Qaysi biri ishlashini
+`AI_PROVIDER` env var belgilaydi — kodni o'zgartirish shart emas:
 
 | `AI_PROVIDER` | Model | Izoh |
 |---|---|---|
 | `gemini` (standart) | `gemini-3.8-flash` | Bepul limiti bor |
-| `claude` | `claude-opus-5` | Adaptiv fikrlash, `effort: low` |
+| `claude` | `claude-opus-5` | Adaptiv fikrlash; hisobda kredit kerak |
+| `openai` | `gpt-6-astra` | Hisobda kredit kerak |
 
 Noto'g'ri qiymat yozilsa bot to'xtamaydi — logga ogohlantirish yozib, `gemini` ga qaytadi.
 
@@ -29,7 +30,7 @@ bilan fonda bajariladi. Foydalanuvchi shu payt "yozmoqda..." holatini ko'radi.
 | Bot | [@myAIagent_25_bot](https://t.me/myAIagent_25_bot) |
 | Kirish nuqtasi | `api/bot.js` |
 | Webhook manzili | `https://<domain>/api/bot` |
-| Kutubxonalar | `@google/genai`, `@anthropic-ai/sdk`, `@vercel/functions` |
+| Kutubxonalar | `@google/genai`, `@anthropic-ai/sdk`, `openai`, `@vercel/functions` |
 
 ## Fayllar
 
@@ -37,11 +38,12 @@ bilan fonda bajariladi. Foydalanuvchi shu payt "yozmoqda..." holatini ko'radi.
 api/bot.js      # webhook handler — yagona kirish nuqtasi
 lib/ai.js       # qaysi AI ishlashini tanlaydi + javobni bo'laklarga bo'lish
 lib/gemini.js   # Gemini chaqiruvi
+lib/openai.js   # OpenAI chaqiruvi
 lib/claude.js   # Claude chaqiruvi
 vercel.json     # funksiya uchun maxDuration: 60
 ```
 
-`lib/gemini.js` va `lib/claude.js` bir xil interfeysga ega: `ask(matn)` va
+`lib/gemini.js`, `lib/claude.js` va `lib/openai.js` bir xil interfeysga ega: `ask(matn)` va
 `errorMessage(xato)`. Yangi provayder qo'shish uchun shu ikki funksiyani yozib,
 `lib/ai.js` dagi `PROVIDERS` ro'yxatiga qo'shish yetarli.
 
@@ -57,6 +59,7 @@ TELEGRAM_BOT_TOKEN=123456789:AA...
 AI_PROVIDER=gemini
 GEMINI_API_KEY=AQ...
 ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-proj-...
 ```
 
 Faqat ishlatayotgan provayderingizning kaliti bo'lsa ham yetadi.
@@ -79,7 +82,7 @@ git push -u origin main
 
 1. vercel.com → **Add New → Project** → shu repo'ni tanlang → **Deploy**.
 2. **Settings → Environment Variables**: `TELEGRAM_BOT_TOKEN`, `AI_PROVIDER`,
-   `GEMINI_API_KEY` (va kerak bo'lsa `ANTHROPIC_API_KEY`) qo'shing → **Redeploy**.
+   `GEMINI_API_KEY` (va kerak bo'lsa `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) qo'shing → **Redeploy**.
 3. Tekshirish: brauzerda `https://<domain>/api/bot` oching → `Bot ishlayapti.`
 
 Env var qo'shgandan keyin **albatta Redeploy qiling** — yangi qiymat faqat yangi
@@ -135,7 +138,8 @@ xato berganini ham ko'rasiz.
 | Webhook | `https://myaiagent-bot.vercel.app/api/bot` |
 | Ishlayotgan AI | Gemini (`AI_PROVIDER=gemini`) |
 
-Claude'da hozir kredit yo'q — kredit qo'shilgach `AI_PROVIDER=claude` qilib almashtirasiz.
+Claude va OpenAI hisoblarida hozir kredit yo'q — shu sababli standart provayder Gemini.
+Kredit qo'shilgach `AI_PROVIDER` ni `claude` yoki `openai` ga o'zgartirib Redeploy qilasiz.
 
 `main`ga push qilinsa Vercel avtomatik deploy qiladi.
 
