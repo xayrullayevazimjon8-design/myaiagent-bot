@@ -136,10 +136,11 @@ xato berganini ham ko'rasiz.
 | Vercel project | `myaiagent-bot` (team `azimjon4`) |
 | Production | https://myaiagent-bot.vercel.app |
 | Webhook | `https://myaiagent-bot.vercel.app/api/bot` |
-| Ishlayotgan AI | Gemini (`AI_PROVIDER=gemini`) |
+| Ishlayotgan AI | Claude (`AI_PROVIDER=claude`) |
 
-Claude va OpenAI hisoblarida hozir kredit yo'q — shu sababli standart provayder Gemini.
-Kredit qo'shilgach `AI_PROVIDER` ni `claude` yoki `openai` ga o'zgartirib Redeploy qilasiz.
+Claude hisobiga kredit qo'shilgan va bot shu asosda ishlaydi. Gemini zaxira sifatida
+qoladi (bepul, lekin kuniga 20 so'rov). OpenAI'da kredit yo'q.
+Provayderni almashtirish: Vercel'da `AI_PROVIDER` qiymatini o'zgartirib Redeploy.
 
 `main`ga push qilinsa Vercel avtomatik deploy qiladi.
 
