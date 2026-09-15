@@ -12,8 +12,8 @@ Bot **Gemini**, **Claude** va **OpenAI** bilan ishlay oladi. Qaysi biri ishlashi
 
 | `AI_PROVIDER` | Model | Izoh |
 |---|---|---|
-| `gemini` (standart) | `gemini-3.8-flash` | Bepul limiti bor |
-| `claude` | `claude-opus-5` | Adaptiv fikrlash; hisobda kredit kerak |
+| `gemini` | `gemini-3.8-flash` | Bepul, lekin kuniga 20 so'rov |
+| `claude` (standart) | `claude-haiku-4-5` | Tez va arzon; fikrlash o'chirilgan |
 | `openai` | `gpt-6-astra` | Hisobda kredit kerak |
 
 Noto'g'ri qiymat yozilsa bot to'xtamaydi — logga ogohlantirish yozib, `gemini` ga qaytadi.
@@ -187,3 +187,16 @@ narsa kelmaydi va **logda ham xato qolmaydi**. Chegara shu holatning oldini olad
 
 > **Gemini bepul limiti — kuniga 20 so'rov** (`gemini-3.8-flash`). Tugaganda API
 > 429 qaytaradi va bot "kunlik limit tugagan" deb javob beradi. Bu kod xatosi emas.
+
+## Model parametrlari har xil
+
+`lib/claude.js` da model nomini almashtirish yetarli emas — Claude oilasidagi
+modellar turli parametrlarni qabul qiladi:
+
+| Model | Fikrlash | `output_config.effort` |
+|---|---|---|
+| `claude-haiku-4-5` | `budget_tokens` bilan yoqiladi; hozir o'chirilgan | **Xato beradi** |
+| `claude-opus-5` | `{ type: 'adaptive' }` | Ishlaydi (`low`…`max`) |
+
+Haiku'ga Opus parametrlarini yuborsangiz API xato qaytaradi va bot javob bermay
+qoladi. Modelni almashtirganda `ask()` ichidagi parametrlarni ham tekshiring.
