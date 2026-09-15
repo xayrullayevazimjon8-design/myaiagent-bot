@@ -146,3 +146,15 @@ Kredit qo'shilgach `AI_PROVIDER` ni `claude` yoki `openai` ga o'zgartirib Redepl
 > **Eslatma:** commit muallifining email'i GitHub akkauntingizga bogʻlangan boʻlishi shart
 > (`xayrullayevazimjon8@gmail.com`). Boshqa email bilan qilingan commit'da Vercel deploy'ni
 > `COMMIT_AUTHOR_REQUIRED` sababi bilan bloklaydi.
+
+## Kalit qo'yilmasa nima bo'ladi
+
+`lib/config.js` har chaqiruvdan oldin kerakli env var borligini tekshiradi va
+bo'lmasa darhol to'xtatadi: *"AI kaliti sozlanmagan (GEMINI_API_KEY)"*.
+
+Bu tekshiruv bejiz emas. Kalitsiz `@google/genai` buni xato deb hisoblamaydi —
+Google Cloud'ning standart credential'larini qidirib, `169.254.169.254` (GCP ichki
+metadata manzili) ga so'rov yuboradi va oxirida `Could not load the default
+credentials` deydi. Bu xatoda `status` ham, `code` ham bo'sh bo'ladi, shuning uchun
+foydalanuvchi eng umumiy "xatolik bo'ldi" matnini ko'radi va asl sabab —
+qo'yilmagan env var — loglarda ko'milib qoladi.
