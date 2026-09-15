@@ -1,7 +1,8 @@
 {
   "functions": {
     "api/bot.js": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "xarakter.md"
     }
   }
 }

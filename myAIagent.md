@@ -24,6 +24,8 @@ Vercel'da serverless funksiya sifatida ishlaydi.
 
 ```
 api/bot.js      # webhook handler — yagona kirish nuqtasi
+xarakter.md     # botning shaxsi (Jarvis) — system prompt
+lib/xarakter.js # xarakter.md ni o'qiydi
 lib/ai.js       # qaysi AI ishlashini tanlaydi, vaqt chegarasi, xabarni bo'laklash
 lib/claude.js   # Claude chaqiruvi
 lib/gemini.js   # Gemini chaqiruvi
@@ -79,6 +81,13 @@ kalitlarni oldindan tekshirish qo'shildi.
 
 Anthropic hisobiga kredit qo'shilgach bot Claude'ga o'tkazildi, keyin
 `claude-opus-5` dan `claude-haiku-4-5` ga tushirildi.
+
+### 6-bosqich — xarakter
+
+Bot Jarvis nomini oldi: Prestigious (sayt yaratish) biznesining assistenti.
+Shaxsi `xarakter.md` da, kodda emas. Chegaralar sinovdan o'tkazildi: aniq narx
+aytmaydi, shartnoma masalasida @azimjonAIagents ga yo'naltiradi, shaxsiy maslahat
+bermaydi, bilmagan narsani to'qimaydi.
 
 ---
 

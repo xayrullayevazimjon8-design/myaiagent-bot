@@ -200,3 +200,16 @@ modellar turli parametrlarni qabul qiladi:
 
 Haiku'ga Opus parametrlarini yuborsangiz API xato qaytaradi va bot javob bermay
 qoladi. Modelni almashtirganda `ask()` ichidagi parametrlarni ham tekshiring.
+
+## Botning xarakteri
+
+Bot nima deyishi va nima demasligi [`xarakter.md`](xarakter.md) da yozilgan —
+kodda emas. Uslubni o'zgartirish uchun shu faylni tahrirlab push qiling.
+
+Fayl har so'rovda system prompt sifatida uzatiladi, uchala provayder ham
+shundan o'qiydi (`lib/xarakter.js`). Ilgari har bir provayder faylida alohida
+nusxasi bor edi — birini tahrirlab ikkinchisini unutish oson edi.
+
+`vercel.json` dagi `includeFiles` muhim: Vercel funksiyaga faqat kerakli
+fayllarni joylaydi, `.md` fayl o'z-o'zidan tushmaydi. Busiz bot lokalda
+ishlaydi-yu, deploy'da zaxira promptga o'tib ketadi (logda ogohlantirish chiqadi).
