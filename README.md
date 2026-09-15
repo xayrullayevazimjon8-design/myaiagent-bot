@@ -81,3 +81,22 @@ curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
 - Rasm, stiker va boshqalar → "Hozircha faqat matnli xabarlarni tushunaman."
 - Handler **har doim `200`** qaytaradi: xato bo'lsa ham. Aks holda Telegram
   o'sha xabarni qayta-qayta yuboraveradi.
+
+---
+
+## Joriy holat (1-bosqich yakunlandi)
+
+| | |
+|---|---|
+| Bot | [@myAIagent_25_bot](https://t.me/myAIagent_25_bot) |
+| Repo | `xayrullayevazimjon8-design/myaiagent-bot` (public) |
+| Vercel project | `myaiagent-bot` (team `azimjon4`) |
+| Production | https://myaiagent-bot.vercel.app |
+| Webhook | `https://myaiagent-bot.vercel.app/api/bot` |
+
+`main`ga push qilinsa Vercel avtomatik deploy qiladi.
+Vercel env var: `TELEGRAM_BOT_TOKEN` (Production + Preview).
+
+> **Eslatma:** commit muallifining email'i GitHub akkauntingizga bogʻlangan boʻlishi shart
+> (`xayrullayevazimjon8@gmail.com`). Boshqa email bilan qilingan commit'da Vercel deploy'ni
+> `COMMIT_AUTHOR_REQUIRED` sababi bilan bloklaydi.
