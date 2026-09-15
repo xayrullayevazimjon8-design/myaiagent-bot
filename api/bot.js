@@ -1,9 +1,9 @@
 // Telegram bot — webhook kirish nuqtasi.
 // Telegram yangi xabar kelganda shu manzilga POST qiladi: https://<domain>/api/bot
 //
-// 2-bosqich: matnli xabarlar Claude'ga yuboriladi.
+// Matnli xabarlar AI'ga yuboriladi — qaysi biriga, lib/ai.js hal qiladi.
 import { waitUntil } from '@vercel/functions';
-import { askClaude, splitMessage, errorMessage } from '../lib/claude.js';
+import { ask, splitMessage, errorMessage, providerName } from '../lib/ai.js';
 
 const TELEGRAM_API = 'https://api.telegram.org';
 
@@ -45,7 +45,7 @@ async function sendTyping(chatId) {
 // Buyruqlarga AI'siz, lokal javob. null qaytsa — xabar Claude'ga ketadi.
 export function commandReply(text) {
   if (text.startsWith('/start')) {
-    return 'Salom! Men Claude asosida ishlaydigan botman. Savolingizni yozing.';
+    return 'Salom! Men AI yordamchi botman. Savolingizni yozing.';
   }
   if (text.startsWith('/help')) {
     return [
@@ -64,12 +64,12 @@ async function replyWithAi(chatId, text) {
   await sendTyping(chatId);
 
   try {
-    const answer = await askClaude(text);
+    const answer = await ask(text);
     for (const part of splitMessage(answer)) {
       await sendMessage(chatId, part);
     }
   } catch (err) {
-    console.error('Claude xato:', err);
+    console.error(`AI xato (${providerName()}):`, err);
     await sendMessage(chatId, errorMessage(err));
   }
 }
