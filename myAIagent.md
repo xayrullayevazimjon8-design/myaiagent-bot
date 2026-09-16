@@ -19,7 +19,7 @@ Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
 | | |
 |---|---|
 | Ishlayotgan model | `gemini-3.8-flash` |
-| System prompt hajmi | ~12 100 belgi (~4600 token) |
+| System prompt hajmi | ~13 400 belgi (~5100 token) + vosita e'loni |
 | Javob tezligi | 4–6 s (o'rtacha 4.8 s) |
 | Kirish nuqtasi | `api/bot.js` |
 | Deploy | `main` ga push → Vercel avtomatik |
@@ -28,6 +28,7 @@ Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
 | Bilim bazasi | `bilim/` — 4 fayl, ~5000 belgi |
 | Provayderlar | Gemini (joriy), Claude, OpenAI — `AI_PROVIDER` bilan almashtiriladi |
 | Suhbat xotirasi | Oxirgi 10 juftlik, 30 daqiqa — `lib/xotira.js` |
+| Vositalar | `qidiruv` — bilim bazasi + internet (Tavily) |
 
 ### Fayl tuzilishi
 
@@ -38,6 +39,10 @@ bilim/          # bilim bazasi — 4 ta .md fayl
 lib/xarakter.js # xarakter + bilim bazasini jamlaydi
 lib/bilim.js    # bilim/ papkasini o'qiydi
 lib/xotira.js   # suhbat tarixi — Redis yoki funksiya xotirasi
+lib/vositalar.js        # vosita e'loni va bajarilishi
+lib/qidiruv-bilim.js    # bilim/ dan qidirish
+lib/qidiruv-internet.js # Tavily orqali internet qidiruv
+lib/post.js     # /post uchun material va so'rov matni
 lib/ai.js       # qaysi AI ishlashini tanlaydi, vaqt chegarasi, xabarni bo'laklash
 lib/claude.js   # Claude chaqiruvi
 lib/gemini.js   # Gemini chaqiruvi
@@ -63,6 +68,8 @@ Yangi provayder qo'shish uchun shu ikki funksiyani yozib, `lib/ai.js` dagi
 | `KV_REST_API_URL` | Upstash/Vercel KV manzili — suhbat xotirasi uchun (ixtiyoriy) |
 | `KV_REST_API_TOKEN` | O'sha Redis'ning tokeni |
 | `XOTIRA` | `off` bo'lsa suhbat xotirasi ishlamaydi |
+| `TAVILY_API_KEY` | Internet qidiruv kaliti — yo'q bo'lsa vosita faqat bilim bazasidan qidiradi |
+| `VOSITA` | `off` bo'lsa vositalar umuman e'lon qilinmaydi |
 | `TELEGRAM_WEBHOOK_SECRET` | Ixtiyoriy himoya |
 
 ---
@@ -159,6 +166,28 @@ Mijoz rozilik bildirsa yoki buyurtma bermoqchi bo'lsa — savol berish to'xtaydi
 `bilim/savol-javob.md` ga sohalar jadvali qo'shildi: kafe, qurilish, do'kon, o'quv
 markaz, klinika, turizm — har biriga tayyor savollar. Bot endi umumiy emas, aynan
 o'sha sohaga tegishli savol beradi. System prompt ~8600 dan ~12 100 belgiga o'sdi.
+
+### 10-bosqich — birinchi vosita: qidiruv
+
+Botga vosita (tool) qo'shildi. Muhim jihati: vosita AI'ga **tavsif bilan** e'lon
+qilinadi — nima qilishi, qachon kerak, qachon kerak emas. Chaqirish-chaqirmaslikni
+model o'zi hal qiladi, kod majburlamaydi.
+
+Ikki manba. Birinchisi — `bilim/` papkasi: fayllar `##` sarlavhalari bo'yicha
+bo'laklarga bo'linadi, so'rov so'zlariga ball beriladi. O'zbekcha qo'shimchalar
+uchun so'z o'zagi solishtiriladi ("narx" → "narxlar", "narxi"), apostrofning uch
+shakli tenglashtiriladi. Ikkinchisi — internet, Tavily orqali: kalit qo'yilmasa
+bu manba jimgina o'chadi va vosita faqat baza bilan ishlaydi.
+
+Vosita e'loni neytral JSON Schema shaklida turadi, har provayder o'z formatiga
+o'giradi — suhbat tarixidagi yondashuvning o'zi. Uchalasi ham qo'llab-quvvatlaydi.
+
+`/post [mavzu]` — sinov buyrug'i: avval qidiruv ishlaydi va topilgan xom material
+ko'rsatiladi, keyin shu material asosida post yoziladi. Post uzunligi xarakter
+faylidagi "2-4 qator" qoidasiga zid bo'lgani uchun `xarakter.md` ga alohida
+"Post yozish" bo'limi qo'shildi — ziddiyat qolmasin.
+
+`VOSITA=off` — vositalarni kodni qaytarmasdan o'chirish yo'li.
 
 ---
 
@@ -348,6 +377,40 @@ shunchaki oldingi gapni unutgan bo'ladi. Ishonchli xotira funksiyadan tashqarida
 turishi kerak (Redis). Kod ikkalasini ham qo'llab-quvvatlaydi va qaysi biri
 ishlayotganini bir marta logga yozadi.
 
+### Halqaning tugashi model xulqiga bog'liq bo'lmasligi kerak
+
+Vosita halqasining birinchi varianti shunday edi: "model vosita chaqirmaguncha
+davom et, oxirgi qadamda vositalarni berma — chaqirmaydi, demak tugaydi".
+Mantiqan to'g'ri va amalda ham ishlaydi.
+
+Sinov buni yiqitdi: qo'ndirma model vositalar berilmaganda ham chaqiruv qaytardi
+va halqa **100 ta so'rov** qilib ketdi. Haqiqiy API bunday qilmaydi, lekin
+mantiqning o'zi noto'g'ri edi — cheksiz halqadan himoya tashqi xizmatning
+xulq-atvoriga tayanib turgan edi.
+
+Endi halqa qadamlar soni bilan chegaralangan (`MAX_VOSITA = 3`) va oxirida
+to'plangan matn qaytariladi. Tashqi tizim nima qilishidan qat'i nazar tugaydi.
+
+### SDK'lar `globalThis.fetch` ni klient yaratilganda ushlab qoladi
+
+Sinovda fetch qo'ndirmasini almashtirish ishlamadi: Anthropic SDK klient
+yaratilgan paytdagi `fetch` ni eslab qolgan va keyingi almashtirishlarni
+ko'rmagan. Natijada ikkinchi sinov birinchisining qo'ndirmasi bilan ishlab,
+tushunarsiz natija bergan.
+
+Yechim — bitta qo'ndirma qo'yib, uning **sozlamasini** o'zgartirish. Bu faqat
+sinovga tegishli emas: agar kodda klient bir marta yaratilib keshlansa (bizda
+shunday), u ushlab qolgan barcha narsa ham keshlangan bo'ladi.
+
+### Kalit so'z qidiruvida eng uzun bo'lak deyarli har doim yutadi
+
+`bilim/` dagi eng uzun bo'lak — botning o'z ko'rsatmalari — beshta sinov
+so'rovidan beshtasida birinchi chiqdi. Sababi mazmun emas, hajm: uzun matnda
+har qanday so'z uchrash ehtimoli yuqori.
+
+Matn ballarini bo'lak uzunligiga bo'lgach ranjirovka beshala so'rovda ham
+tuzaldi. Kalit so'z qidiruvi qurganda uzunlikni hisobga olish shart.
+
 ### Takrorlanayotgan savol — xotira yo'qligining birinchi belgisi
 
 Bot "qaysi sohada xizmat ko'rsatasiz?" degan savolni qayta-qayta berardi. Tashqi
@@ -442,4 +505,6 @@ chaqirilgan tashqi API'larni ko'rish mumkin — nosozlik qidirishda eng foydali 
 | Bilim bazasi to'ldirilmagan | `bilim/` fayllarida `<!-- NAMUNA — to'ldiring -->` belgilari bor. Narxlar haqiqiy ($200/$500/$1000), qolgani namuna — bot ularni ishonch bilan aytadi |
 | Ta'rif tafsilotlari | Har bir ta'rifga nima kirishi aniqlanmagan, egasi keyinroq beradi |
 | Suhbat xotirasi | Bor (9-bosqich), lekin Redis ulanmagan — hozir funksiya xotirasida, ya'ni suhbat o'rtasida yo'qolishi mumkin |
+| `TAVILY_API_KEY` | Qo'yilmagan — qidiruv hozir faqat bilim bazasidan ishlaydi |
+| Bilim bazasi promptda ham, vositada ham | Baza har so'rovda promptga to'liq qo'shiladi (~3300 token). Qidiruv vositasi bo'lgach bu ortiqcha — bazani promptdan olib tashlash mumkin |
 | `TELEGRAM_WEBHOOK_SECRET` | Kod tayyor, yoqilmagan |

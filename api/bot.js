@@ -3,9 +3,12 @@
 //
 // Matnli xabarlar AI'ga yuboriladi — qaysi biriga, lib/ai.js hal qiladi.
 // Suhbat tarixi lib/xotira.js da saqlanadi va har so'rovda AI'ga qo'shib beriladi.
+// /post — qidiruv vositasini sinash buyrug'i (lib/post.js).
 import { waitUntil } from '@vercel/functions';
 import { ask, splitMessage, errorMessage, providerName } from '../lib/ai.js';
 import { tarix, saqla, tozala } from '../lib/xotira.js';
+import { qidiruvniBajar } from '../lib/vositalar.js';
+import { materialMatni, postSorovi } from '../lib/post.js';
 
 const TELEGRAM_API = 'https://api.telegram.org';
 
@@ -66,40 +69,76 @@ export function commandReply(text) {
       'Buyruqlar:',
       '/start — boshlash',
       '/tozala — suhbat tarixini unutish',
+      '/post [mavzu] — mavzu bo\'yicha material qidirib, post yozish',
       '/help — shu yordam',
     ].join('\n');
   }
   return null;
 }
 
-// AI javobini tayyorlab yuborish. 200 qaytarilgandan keyin fonda ishlaydi.
-async function replyWithAi(chatId, text) {
+// Uzun ishni "yozmoqda..." holati bilan o'rash.
+//
+// Telegram bu holatni ~5 soniyada o'chiradi, AI javobi esa undan ancha uzoq
+// tayyorlanadi — takrorlamasak, foydalanuvchi uzun jimlikni ko'rib bot
+// ishlamayapti deb o'ylaydi.
+async function yozmoqda(chatId, ish) {
   await sendTyping(chatId);
-
-  // Telegram "yozmoqda..." holatini ~5 soniyada o'chiradi. AI javobi esa undan
-  // ancha uzoq tayyorlanadi — takrorlamasak, foydalanuvchi uzun jimlikni ko'rib
-  // bot ishlamayapti deb o'ylaydi.
   const typing = setInterval(() => sendTyping(chatId), TYPING_REFRESH_MS);
 
   try {
-    // Tarixni javobdan oldin o'qiymiz va saqlashda o'shani qayta ishlatamiz —
-    // xotiraga ikkinchi marta borish shart emas.
-    const oldingi = await tarix(chatId);
-    const answer = await ask(text, oldingi);
-
-    for (const part of splitMessage(answer)) {
-      await sendMessage(chatId, part);
-    }
-
-    // Faqat muvaffaqiyatli javob saqlanadi: xato matni suhbat tarixiga tushsa,
-    // bot keyingi javoblarida o'shanga tayanib qolardi.
-    await saqla(chatId, oldingi, text, answer);
-  } catch (err) {
-    console.error(`AI xato (${providerName()}):`, err);
-    await sendMessage(chatId, errorMessage(err));
+    return await ish();
   } finally {
     // Tozalash shart: taymer qolsa funksiya bo'sh turib vaqt sarflaydi.
     clearInterval(typing);
+  }
+}
+
+// Javobni bo'laklarga bo'lib yuborish (Telegram 4096 belgidan ko'pini olmaydi).
+async function sendLong(chatId, text) {
+  for (const part of splitMessage(text)) {
+    await sendMessage(chatId, part);
+  }
+}
+
+// AI javobini tayyorlab yuborish. 200 qaytarilgandan keyin fonda ishlaydi.
+async function replyWithAi(chatId, text) {
+  try {
+    await yozmoqda(chatId, async () => {
+      // Tarixni javobdan oldin o'qiymiz va saqlashda o'shani qayta ishlatamiz —
+      // xotiraga ikkinchi marta borish shart emas.
+      const oldingi = await tarix(chatId);
+      const answer = await ask(text, oldingi);
+
+      await sendLong(chatId, answer);
+
+      // Faqat muvaffaqiyatli javob saqlanadi: xato matni suhbat tarixiga tushsa,
+      // bot keyingi javoblarida o'shanga tayanib qolardi.
+      await saqla(chatId, oldingi, text, answer);
+    });
+  } catch (err) {
+    console.error(`AI xato (${providerName()}):`, err);
+    await sendMessage(chatId, errorMessage(err));
+  }
+}
+
+// /post [mavzu] — qidiruv vositasini sinash.
+//
+// Avval vosita ishlaydi va topilgani ko'rsatiladi, keyin shu material asosida
+// post yoziladi. Vositani kod chaqiradi, model emas: sinovning maqsadi vosita
+// nima topishini ko'rish.
+async function postJavobi(chatId, mavzu) {
+  try {
+    await yozmoqda(chatId, async () => {
+      const natija = await qidiruvniBajar({ sorov: mavzu, manba: 'hammasi' });
+      await sendLong(chatId, materialMatni(natija));
+
+      // Suhbat tarixisiz: post — alohida topshiriq, mijoz bilan suhbat emas.
+      const post = await ask(postSorovi(mavzu, natija), []);
+      await sendLong(chatId, post);
+    });
+  } catch (err) {
+    console.error(`/post xato (${providerName()}):`, err);
+    await sendMessage(chatId, errorMessage(err));
   }
 }
 
@@ -142,7 +181,15 @@ export default async function handler(req, res) {
       await sendMessage(chatId, 'Hozircha faqat matnli xabarlarni tushunaman.');
     } else if (chatId) {
       const command = commandReply(text);
-      if (command) {
+      if (text.startsWith('/post')) {
+        const mavzu = text.slice('/post'.length).trim();
+        if (!mavzu) {
+          await sendMessage(chatId, 'Mavzu yozing. Masalan: /post qurilish firmasi uchun sayt');
+        } else {
+          // Qidiruv va post yozish — ikkalasi ham uzoq, javobdan keyinga qoladi.
+          waitUntil(postJavobi(chatId, mavzu));
+        }
+      } else if (command) {
         if (TOZALOVCHI_BUYRUQLAR.some((b) => text.startsWith(b))) {
           await tozala(chatId);
         }

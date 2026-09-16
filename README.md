@@ -2,8 +2,10 @@
 
 Webhook orqali ishlaydigan Telegram bot. Vercel'da serverless funksiya sifatida turadi.
 
-**Joriy bosqich: 9 — suhbat xotirasi.** Kelgan matn AI'ga oldingi xabarlar bilan
-birga yuboriladi. `/start`, `/tozala` va `/help` AI'siz, lokal javob beradi.
+**Joriy bosqich: 10 — birinchi vosita.** Botda `qidiruv` vositasi bor: bilim
+bazasidan va internetdan ma'lumot topadi, ishlatish-ishlatmaslikni model o'zi hal
+qiladi. `/start`, `/tozala`, `/help` AI'siz javob beradi, `/post` esa vositani
+sinash uchun.
 
 ## Uchta AI, bitta tugma
 
@@ -41,6 +43,10 @@ lib/gemini.js   # Gemini chaqiruvi
 lib/openai.js   # OpenAI chaqiruvi
 lib/claude.js   # Claude chaqiruvi
 lib/xotira.js   # suhbat tarixi — Redis yoki funksiya xotirasi
+lib/vositalar.js       # vosita e'loni va bajarilishi
+lib/qidiruv-bilim.js   # bilim/ papkasidan qidirish
+lib/qidiruv-internet.js # Tavily orqali internet qidiruv
+lib/post.js     # /post uchun material va so'rov matni
 lib/xarakter.js # system prompt: xarakter + bilim bazasi
 lib/bilim.js    # bilim/ papkasini o'qiydi
 lib/config.js   # kalitlarni tekshirish
@@ -118,6 +124,8 @@ curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
 - `POST /api/bot` → Telegram update'i
 - `/start`, `/tozala`, `/help` — tayyor javoblar, AI chaqirilmaydi
   (`/start` va `/tozala` suhbat xotirasini ham tozalaydi)
+- `/post [mavzu]` — qidiruv vositasini ishga tushiradi, topilgan materialni
+  ko'rsatadi va shu asosda post yozadi
 - Boshqa matn → AI javob beradi, uzun javob bo'laklarga bo'linadi (limit 4096 belgi)
 - Rasm, stiker va boshqalar → "Hozircha faqat matnli xabarlarni tushunaman."
 - Handler **har doim `200`** qaytaradi: xato bo'lsa ham. Aks holda Telegram
@@ -251,6 +259,51 @@ Har juftlik keyingi so'rovlarga qo'shimcha token bo'lib qo'shiladi. To'la 10
 juftlik bilan bitta so'rov taxminan **1500–2000 token** ko'proq yeydi — o'zbekcha
 matn ingliz tilidagidan ~1.8 barobar ko'p token olishini unutmang. Xotira uzunligi
 `lib/xotira.js` dagi `MAX_JUFTLIK` bilan boshqariladi.
+
+## Qidiruv vositasi
+
+Bot AI'ga bitta vosita e'lon qiladi — **qidiruv**. E'londa nima qilishi va qachon
+ishlatilishi yozilgan, qaror modelniki: kod uni chaqirishga majburlamaydi.
+
+```
+qidiruv(sorov, manba?)
+  manba: bilim | internet | hammasi   (standart: hammasi)
+```
+
+**Manba 1 — `bilim/` papkasi.** Fayllar `##` sarlavhalari bo'yicha bo'laklarga
+bo'linadi, so'rov so'zlariga ball beriladi, eng mos 3 bo'lak qaytariladi.
+O'zbekcha qo'shimchalar so'z o'zagi bo'yicha solishtiriladi ("narx" → "narxlar",
+"narxi"), apostrofning uch shakli (`'`, `ʻ`, `‘`) tenglashtiriladi. Uzun bo'laklar
+ballari kamaytiriladi — aks holda eng uzun bo'lak deyarli har so'rovda birinchi
+chiqadi.
+
+**Manba 2 — internet ([Tavily](https://tavily.com)).** `TAVILY_API_KEY` qo'yilmasa
+bu manba **butunlay o'chadi** va vosita faqat bilim bazasi bilan ishlaydi. Qidiruv
+xato bersa ham bot to'xtamaydi — natijada shunday deb yoziladi.
+
+**Halqa:** model vosita chaqiradi → kod bajaradi → natija qaytariladi → model
+javob yozadi. Bitta javobda ko'pi bilan **3 marta**; oxirgi so'rovda vositalar
+umuman berilmaydi, ya'ni halqaning tugashi model xulqiga emas, kodga bog'liq.
+
+Uchala provayder ham vositani qo'llab-quvvatlaydi, formatlari boshqa:
+
+| Provayder | E'lon | Chaqiruv | Natija |
+|---|---|---|---|
+| Claude | `tools[].input_schema` | `tool_use` bloki | `tool_result` xabari |
+| Gemini | `tools[].parameters` | `function_call` qadami | `function_result` qadami |
+| OpenAI | `tools[].parameters` | `function_call` elementi | `function_call_output` |
+
+**O'chirish:** `VOSITA=off` → vositalar umuman e'lon qilinmaydi. Biror model
+e'lon formatini qabul qilmay qolsa, kodni qaytarmasdan shu bilan qutulasiz.
+
+### `/post [mavzu]`
+
+Vositani sinash buyrug'i. Avval qidiruv ishlaydi va **topilgan xom material**
+ko'rsatiladi (qaysi bo'lak, qaysi havola), keyin shu material asosida post
+yoziladi. Post uzunligi va uslubi `xarakter.md` dagi "Post yozish" bo'limida.
+
+Vositani bu yerda kod chaqiradi, model emas — sinovning maqsadi qidiruv nima
+topishini ko'rish.
 
 ## Botning xarakteri
 
