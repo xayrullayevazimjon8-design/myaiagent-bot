@@ -2,7 +2,10 @@
 
 Webhook orqali ishlaydigan Telegram bot. Vercel'da serverless funksiya sifatida turadi.
 
-**Joriy bosqich: 10 — birinchi vosita.** Botda `qidiruv` vositasi bor: bilim
+**Joriy bosqich: 11 — ikki agent.** `/post` da yozuvchi post yozadi, muharrir
+uni tekshiradi va kerak bo'lsa qaytaradi.
+
+**10-bosqich — birinchi vosita.** Botda `qidiruv` vositasi bor: bilim
 bazasidan va internetdan ma'lumot topadi, ishlatish-ishlatmaslikni model o'zi hal
 qiladi. `/start`, `/tozala`, `/help` AI'siz javob beradi, `/post` esa vositani
 sinash uchun.
@@ -46,7 +49,9 @@ lib/xotira.js   # suhbat tarixi — Redis yoki funksiya xotirasi
 lib/vositalar.js       # vosita e'loni va bajarilishi
 lib/qidiruv-bilim.js   # bilim/ papkasidan qidirish
 lib/qidiruv-internet.js # Tavily orqali internet qidiruv
-lib/post.js     # /post uchun material va so'rov matni
+lib/post.js     # /post oqimi: material, yozuvchi, muharrir
+lib/agent.js    # agent faylini o'qib, alohida system prompt bilan ishga tushiradi
+agentlar/       # agentlarning xarakter fayllari
 lib/xarakter.js # system prompt: xarakter + bilim bazasi
 lib/bilim.js    # bilim/ papkasini o'qiydi
 lib/config.js   # kalitlarni tekshirish
@@ -298,12 +303,46 @@ e'lon formatini qabul qilmay qolsa, kodni qaytarmasdan shu bilan qutulasiz.
 
 ### `/post [mavzu]`
 
-Vositani sinash buyrug'i. Avval qidiruv ishlaydi va **topilgan xom material**
-ko'rsatiladi (qaysi bo'lak, qaysi havola), keyin shu material asosida post
-yoziladi. Post uzunligi va uslubi `xarakter.md` dagi "Post yozish" bo'limida.
+Qidiruv va ikkala agent birga ishlaydigan buyruq. Telegram'ga uchta xabar boradi:
 
-Vositani bu yerda kod chaqiradi, model emas — sinovning maqsadi qidiruv nima
-topishini ko'rish.
+1. **Topilgan material** — qaysi bo'lak, qaysi havola
+2. **Muharrir tekshiruvi** — har rauddagi hukm va sabab
+3. **Tayyor post**
+
+## Agentlar
+
+Jarvis mijoz bilan gaplashadi, agentlar ichki ish bajaradi. Har birining
+xarakteri alohida faylda:
+
+```
+agentlar/yozuvchi.md   # materialdan post yozadi
+agentlar/muharrir.md   # yozilganini tekshiradi
+```
+
+Ohangni yoki mezonlarni o'zgartirish uchun shu fayllarni tahrirlab push qiling —
+kodga tegish shart emas, xuddi `xarakter.md` kabi.
+
+**Oqim:** yozuvchi qoralama yozadi → muharrir tekshiradi → "qayta yoz" bo'lsa
+yozuvchi sababni hisobga olib tuzatadi. Ko'pi bilan **2 marta** qaytariladi,
+keyin natija baribir ko'rsatiladi: cheksiz tuzatishdan ko'ra, egasi qaror
+qilgani yaxshi.
+
+**Muharrir hukmi** javobning birinchi qatorida: `O'TDI` yoki `QAYTA YOZ`, keyin
+sabab. Kod uni bag'rikenglik bilan o'qiydi (katta-kichik harf, apostrofning uch
+shakli, "Hukm: ..." ko'rinishi). Hukm umuman tanilmasa post o'tgan hisoblanadi
+va xabarda shu belgilanadi — muharrirning noaniq javobi tayyor postni
+bloklamasligi kerak.
+
+**Agentlar vositasiz ishlaydi:** yozuvchiga material allaqachon berilgan,
+muharrirga tekshiriladigan matn berilgan — qidiruv ikkalasiga ham kerak emas.
+
+**Vaqt byudjeti — 35 soniya.** Eng yomon holatda `/post` 6 ta AI chaqiruvi
+qiladi (qidiruv + 3 qoralama + 2 tekshiruv). Vercel esa 60 soniyada funksiyani
+jimgina o'ldiradi, shuning uchun byudjet tugasa halqa to'xtaydi va bor qoralama
+ko'rsatiladi.
+
+`vercel.json` dagi `includeFiles` ga `agentlar/**` qo'shilgan — busiz agent
+fayllari deploy'ga tushmaydi va bot zaxira promptga o'tib ketadi.
 
 ## Botning xarakteri
 

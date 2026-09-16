@@ -29,6 +29,7 @@ Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
 | Provayderlar | Gemini (joriy), Claude, OpenAI — `AI_PROVIDER` bilan almashtiriladi |
 | Suhbat xotirasi | Oxirgi 10 juftlik, 30 daqiqa — `lib/xotira.js` |
 | Vositalar | `qidiruv` — bilim bazasi + internet (Tavily) |
+| Agentlar | `yozuvchi`, `muharrir` — `agentlar/` papkasida |
 
 ### Fayl tuzilishi
 
@@ -42,7 +43,9 @@ lib/xotira.js   # suhbat tarixi — Redis yoki funksiya xotirasi
 lib/vositalar.js        # vosita e'loni va bajarilishi
 lib/qidiruv-bilim.js    # bilim/ dan qidirish
 lib/qidiruv-internet.js # Tavily orqali internet qidiruv
-lib/post.js     # /post uchun material va so'rov matni
+lib/post.js     # /post oqimi: material, yozuvchi, muharrir
+lib/agent.js    # agentni o'z system prompti bilan ishga tushiradi
+agentlar/       # agentlarning xarakter fayllari
 lib/ai.js       # qaysi AI ishlashini tanlaydi, vaqt chegarasi, xabarni bo'laklash
 lib/claude.js   # Claude chaqiruvi
 lib/gemini.js   # Gemini chaqiruvi
@@ -199,6 +202,25 @@ Buning uchun uch joy bir vaqtda o'zgartirildi: `xarakter.md` dagi rad qoidasi,
 `lib/xarakter.js` dagi bilim bazasi qoidasi (u "bazada yo'q faktni aytma" deb
 hamma savolga taalluqli edi) va vosita tavsifi. Uchtasidan biri eski holida
 qolsa, bot yana ziddiyatga tushardi.
+
+### 11-bosqich — ikki agent: yozuvchi va muharrir
+
+`/post` endi bitta chaqiruv emas, ketma-ketlik: qidiruv → yozuvchi → muharrir.
+Har agentning xarakteri alohida faylda (`agentlar/yozuvchi.md`,
+`agentlar/muharrir.md`) — kodda emas.
+
+Yozuvchi: Jarvis ohangida, 5-8 qator, oxirida savol yoki chaqiriq, faqat
+materialdagi faktlar. Muharrir: mavzuga moslik, uydirma fakt, ohang va uzunlikni
+tekshiradi, o'zi qayta yozmaydi — kamchilikni ko'rsatadi.
+
+Muharrir "qayta yoz" desa yozuvchi sababni hisobga olib tuzatadi, ko'pi bilan
+ikki marta. Keyin natija baribir ko'rsatiladi.
+
+Buning uchun `ask()` ga `sozlama` qo'shildi: `system` (Jarvis o'rniga boshqa
+prompt) va `vositasiz` (vosita e'lon qilinmaydi). Agentlarga qidiruv kerak emas —
+material ularga tayyor beriladi.
+
+`vercel.json` dagi `includeFiles` ga `agentlar/**` qo'shildi.
 
 ---
 
@@ -387,6 +409,34 @@ Eng yomoni — bu **nosozlik ko'rinishida chiqmaydi**: xato ham, log ham yo'q, b
 shunchaki oldingi gapni unutgan bo'ladi. Ishonchli xotira funksiyadan tashqarida
 turishi kerak (Redis). Kod ikkalasini ham qo'llab-quvvatlaydi va qaysi biri
 ishlayotganini bir marta logga yozadi.
+
+### Agent javobini kod o'qisa: shakl qat'iy, o'qish bag'rikeng
+
+Muharrirning hukmini kod o'qiydi — demak shakl kerak: birinchi qator `O'TDI`
+yoki `QAYTA YOZ`. Lekin model shaklga har doim ham roppa-rosa amal qilmaydi:
+"Hukm: QAYTA YOZ", "o'tdi.", apostrofning boshqa shakli, yoki umuman erkin matn.
+
+Ikki qoida shundan chiqdi:
+
+1. **O'qish bag'rikeng bo'lsin** — katta-kichik harf, tinish belgilari,
+   apostrofning uch shakli, qatordagi ortiqcha so'zlar hisobga olinsin.
+2. **Tanilmagan javob ishni to'xtatmasin.** Hukm o'qilmasa post "o'tdi"
+   hisoblanadi va xabarda shu belgilanadi. Aks holda muharrirning noaniq bitta
+   javobi tayyor postni butunlay yo'q qilardi.
+
+Ikkinchisi muhimroq: agentlar zanjirida bitta agentning noaniq javobi butun
+zanjirni to'xtatmasligi kerak.
+
+### Agentlar zanjirida vaqt byudjeti kerak
+
+Bitta chaqiruvning 45 soniyalik chegarasi bor edi. Zanjirda esa chaqiruvlar
+qo'shiladi: `/post` eng yomon holatda 6 ta (qidiruv + 3 qoralama + 2 tekshiruv).
+Har biri chegaradan o'tsa ham, yig'indisi Vercel'ning 60 soniyasidan oshadi —
+va funksiya jimgina o'ladi.
+
+Shuning uchun zanjirga alohida byudjet qo'yildi (35 s): tugasa halqa to'xtaydi
+va bor qoralama ko'rsatiladi. Har chaqiruvning o'z chegarasi ham byudjetdan
+qolgan vaqtga moslanadi.
 
 ### Gemini'ga fikrlash qadamini qaytarmasang, vosita halqasi yiqiladi
 

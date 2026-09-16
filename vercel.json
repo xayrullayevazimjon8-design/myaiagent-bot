@@ -2,7 +2,7 @@
   "functions": {
     "api/bot.js": {
       "maxDuration": 60,
-      "includeFiles": "{xarakter.md,bilim/**}"
+      "includeFiles": "{xarakter.md,bilim/**,agentlar/**}"
     }
   }
 }

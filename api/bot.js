@@ -8,7 +8,7 @@ import { waitUntil } from '@vercel/functions';
 import { ask, splitMessage, errorMessage, providerName } from '../lib/ai.js';
 import { tarix, saqla, tozala } from '../lib/xotira.js';
 import { qidiruvniBajar } from '../lib/vositalar.js';
-import { materialMatni, postSorovi } from '../lib/post.js';
+import { materialMatni, postYoz, jarayonMatni } from '../lib/post.js';
 
 const TELEGRAM_API = 'https://api.telegram.org';
 
@@ -121,20 +121,20 @@ async function replyWithAi(chatId, text) {
   }
 }
 
-// /post [mavzu] — qidiruv vositasini sinash.
+// /post [mavzu] — qidiruv, yozuvchi va muharrir birga ishlaydi.
 //
-// Avval vosita ishlaydi va topilgani ko'rsatiladi, keyin shu material asosida
-// post yoziladi. Vositani kod chaqiradi, model emas: sinovning maqsadi vosita
-// nima topishini ko'rish.
+// Uch xabar boradi: topilgan material, muharrir tekshiruvi va tayyor post.
+// Vositani bu yerda kod chaqiradi, model emas: maqsad qidiruv nima topishini
+// va agentlar u bilan nima qilishini ko'rsatish.
 async function postJavobi(chatId, mavzu) {
   try {
     await yozmoqda(chatId, async () => {
       const natija = await qidiruvniBajar({ sorov: mavzu, manba: 'hammasi' });
       await sendLong(chatId, materialMatni(natija));
 
-      // Suhbat tarixisiz: post — alohida topshiriq, mijoz bilan suhbat emas.
-      const post = await ask(postSorovi(mavzu, natija), []);
-      await sendLong(chatId, post);
+      const yakun = await postYoz(mavzu, natija);
+      await sendLong(chatId, jarayonMatni(yakun));
+      await sendLong(chatId, yakun.post);
     });
   } catch (err) {
     console.error(`/post xato (${providerName()}):`, err);
