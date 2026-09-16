@@ -19,7 +19,7 @@ Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
 | | |
 |---|---|
 | Ishlayotgan model | `gemini-3.8-flash` |
-| System prompt hajmi | ~13 400 belgi (~5100 token) + vosita e'loni |
+| System prompt hajmi | ~15 000 belgi (~5700 token) + vosita e'loni |
 | Javob tezligi | 4–6 s (o'rtacha 4.8 s) |
 | Kirish nuqtasi | `api/bot.js` |
 | Deploy | `main` ga push → Vercel avtomatik |
@@ -188,6 +188,17 @@ faylidagi "2-4 qator" qoidasiga zid bo'lgani uchun `xarakter.md` ga alohida
 "Post yozish" bo'limi qo'shildi — ziddiyat qolmasin.
 
 `VOSITA=off` — vositalarni kodni qaytarmasdan o'chirish yo'li.
+
+**Bot endi umumiy savollarga ham javob beradi** (egasining qarori): valyuta kursi,
+ob-havo, yangilik. Javob o'zgarib turadigan bo'lsa xotiradagi raqamni aytmaydi,
+qidiradi. Ikki istisno saqlanib qoldi: Prestigious faktlari faqat bilim bazasidan
+olinadi (internetdagi narx Prestigious narxi emas) va shaxsiy maslahat berilmaydi —
+kursning qanchaligini aytish ma'lumot, pulni qayerga qo'yishni aytish maslahat.
+
+Buning uchun uch joy bir vaqtda o'zgartirildi: `xarakter.md` dagi rad qoidasi,
+`lib/xarakter.js` dagi bilim bazasi qoidasi (u "bazada yo'q faktni aytma" deb
+hamma savolga taalluqli edi) va vosita tavsifi. Uchtasidan biri eski holida
+qolsa, bot yana ziddiyatga tushardi.
 
 ---
 
