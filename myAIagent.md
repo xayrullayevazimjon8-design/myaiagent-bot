@@ -28,7 +28,7 @@ Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
 | Bilim bazasi | `bilim/` — 4 fayl, ~5000 belgi |
 | Provayderlar | Gemini (joriy), Claude, OpenAI — `AI_PROVIDER` bilan almashtiriladi |
 | Suhbat xotirasi | Oxirgi 10 juftlik, 30 daqiqa — `lib/xotira.js` |
-| Vositalar | `qidiruv` — bilim bazasi + internet (Tavily) |
+| Vositalar | `qidiruv` (bilim bazasi + internet), `kover` (rasm) |
 | Agentlar | `yozuvchi`, `muharrir` — `agentlar/` papkasida |
 
 ### Fayl tuzilishi
@@ -43,6 +43,9 @@ lib/xotira.js   # suhbat tarixi — Redis yoki funksiya xotirasi
 lib/vositalar.js        # vosita e'loni va bajarilishi
 lib/qidiruv-bilim.js    # bilim/ dan qidirish
 lib/qidiruv-internet.js # Tavily orqali internet qidiruv
+lib/kover.js           # kover vositasi: API, yiqilsa shablon
+lib/kover-api.js       # rasm generatsiyasi (Gemini rasm modeli)
+lib/kover-shablon.js   # PNG yasovchi — kutubxonasiz
 lib/post.js     # /post oqimi: qidiruv, agentlar, natija
 agentlar/       # agentlar — har birining xarakteri (.md) va funksiyalari (.js)
   agent.js         # umumiy qism: xarakter faylini o'qish va ishga tushirish
@@ -75,6 +78,9 @@ Yangi provayder qo'shish uchun shu ikki funksiyani yozib, `lib/ai.js` dagi
 | `XOTIRA` | `off` bo'lsa suhbat xotirasi ishlamaydi |
 | `TAVILY_API_KEY` | Internet qidiruv kaliti — yo'q bo'lsa vosita faqat bilim bazasidan qidiradi |
 | `VOSITA` | `off` bo'lsa vositalar umuman e'lon qilinmaydi |
+| `RASM_API_KEY` | Kover uchun kalit — yo'q bo'lsa `GEMINI_API_KEY` |
+| `RASM_MODEL` | Rasm modeli (standart `gemini-3.1-flash-image`) |
+| `KOVER` | `off` bo'lsa kover yasalmaydi |
 | `TELEGRAM_WEBHOOK_SECRET` | Ixtiyoriy himoya |
 
 ---
@@ -226,6 +232,17 @@ prompt) va `vositasiz` (vosita e'lon qilinmaydi). Agentlarga qidiruv kerak emas 
 material ularga tayyor beriladi.
 
 `vercel.json` dagi `includeFiles` ga `agentlar/**` qo'shildi.
+
+### 12-bosqich — uchinchi vosita: kover rasm
+
+`/post` endi rasm bilan chiqadi. Vosita ikki yo'lli: rasm modeli ishlasa undan,
+ishlamasa shablon koverdan. Ikkinchisi zaxira emas, **kafolat** — kalit yo'q,
+limit tugagan, API yiqilgan yoki kechikkan, farqi yo'q: post rasmsiz qolmaydi
+va foydalanuvchi xato ko'rmaydi.
+
+Shablon kover `lib/kover-shablon.js` da noldan yig'iladi: `node:zlib` ustida PNG
+(IHDR/IDAT/IEND, CRC32) va ichki 5×7 nuqtali shrift. 1280×720, fon rangi
+mavzudan hisoblanadi, pastida "Prestigious".
 
 ---
 
@@ -414,6 +431,47 @@ Eng yomoni — bu **nosozlik ko'rinishida chiqmaydi**: xato ham, log ham yo'q, b
 shunchaki oldingi gapni unutgan bo'ladi. Ishonchli xotira funksiyadan tashqarida
 turishi kerak (Redis). Kod ikkalasini ham qo'llab-quvvatlaydi va qaysi biri
 ishlayotganini bir marta logga yozadi.
+
+### SDK'da usul bor — lekin sizning kalitingiz uchun emas
+
+Kover birinchi marta `models.generateImages` (Imagen) bilan yozilgandi: SDK'da
+bor, typing'da bor, hujjatdagi misol ham o'sha. Sinovda SDK **so'rov yubormasdan
+turib** rad etdi:
+
+```
+This method is only supported by the Gemini Enterprise Agent Platform
+(previously known as Vertex AI).
+```
+
+Ya'ni usul kutubxonada bor, lekin oddiy API kaliti bilan emas — Vertex AI
+credential'lari kerak. Yechim o'sha yerdan chiqdi: rasm modeli ham matn bilan
+bir xil yo'ldan chaqirilarkan — `interactions.create`, faqat modeli
+`gemini-3.1-flash-image` va javobi `output_image` bo'lib keladi.
+
+**Typing'da usul borligi u sizning autentifikatsiyangizda ishlaydi degani emas.**
+
+### Vosita natijasi matn bo'lmasa, unga alohida yo'l kerak
+
+Qidiruv matn qaytaradi — uni modelga berib, model javobga qo'shadi. Rasm bilan
+bunday bo'lmaydi: modelga rasmni berib bo'lmaydi, u javobga ham qo'shilmaydi.
+
+Shuning uchun vosita bajarilganda rasm *ilovalar* ro'yxatiga tushadi, `ask()`
+uni chaqiruvchiga qaytaradi va `api/bot.js` javob bilan birga yuboradi. Modelga
+esa faqat qisqa xabar boradi: rasm bor, qaysi yo'l bilan yasalgan.
+
+Umumiy qoida: vosita natijasi matn bo'lmasa, uni modelning kontekstidan emas,
+yon kanaldan o'tkazish kerak.
+
+### Serverless'da rasm chizadigan hech narsa yo'q
+
+Shablon kover uchun `canvas` ham, `sharp` ham ishlatilmadi: ikkalasi ham native
+kutubxona, deploy hajmi va xavfi oshadi. `sharp` SVG'ni rasmga aylantira oladi,
+lekin matn chizish uchun tizimda shrift bo'lishi kerak — Vercel runtime'ida
+kafolatlanmagan.
+
+Shuning uchun PNG qo'lda yig'ildi: `node:zlib` bilan siqish, CRC32, IHDR/IDAT/IEND
+va ichki 5×7 nuqtali shrift. Harflar burchakli chiqadi va faqat lotin alifbosi
+bor, lekin bu yo'l hech narsaga bog'liq emas.
 
 ### Agent javobini kod o'qisa: shakl qat'iy, o'qish bag'rikeng
 

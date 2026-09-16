@@ -9,11 +9,15 @@ import { ask, splitMessage, errorMessage, providerName } from '../lib/ai.js';
 import { tarix, saqla, tozala } from '../lib/xotira.js';
 import { qidiruvniBajar } from '../lib/vositalar.js';
 import { materialMatni, postYoz, jarayonMatni } from '../lib/post.js';
+import { kover } from '../lib/kover.js';
 
 const TELEGRAM_API = 'https://api.telegram.org';
 
 // Telegram "yozmoqda..." holatini qancha vaqtda yangilash (u ~5 soniyada o'chadi).
 const TYPING_REFRESH_MS = 4000;
+
+// Rasm izohi (caption) shundan uzun bo'lolmaydi — matn alohida xabar bo'lib ketadi.
+const IZOH_CHEGARASI = 1024;
 
 // Telegram API manzilini yig'ish. Token faqat shu yerda o'qiladi.
 function apiUrl(method) {
@@ -32,6 +36,23 @@ async function sendMessage(chatId, text) {
 
   if (!res.ok) {
     console.error('sendMessage xato:', res.status, await res.text());
+  }
+  return res.ok;
+}
+
+// Rasm yuborish. Baytlar multipart bilan ketadi — Node 20 da FormData ham,
+// Blob ham bor, qo'shimcha kutubxona kerak emas.
+async function sendPhoto(chatId, rasm, izoh = '', mime = 'image/png') {
+  const kengaytma = mime.split('/')[1]?.split('+')[0] || 'png';
+  const forma = new FormData();
+  forma.append('chat_id', String(chatId));
+  if (izoh) forma.append('caption', izoh);
+  forma.append('photo', new Blob([rasm], { type: mime }), `kover.${kengaytma}`);
+
+  const res = await fetch(apiUrl('sendPhoto'), { method: 'POST', body: forma });
+
+  if (!res.ok) {
+    console.error('sendPhoto xato:', res.status, await res.text());
   }
   return res.ok;
 }
@@ -100,6 +121,27 @@ async function sendLong(chatId, text) {
   }
 }
 
+// Javobni ilovalari bilan yuborish.
+//
+// Matn izohga sig'sa rasm bilan birga ketadi — bitta chiroyli xabar bo'ladi.
+// Sig'masa avval rasm, keyin matn. Rasm yuborilmay qolsa ham matn yetib boradi:
+// rasm bezak, matn esa javobning o'zi.
+async function javobYubor(chatId, matn, ilovalar = []) {
+  const [birinchi, ...qolgani] = ilovalar;
+
+  if (birinchi && matn.length <= IZOH_CHEGARASI) {
+    const yubordi = await sendPhoto(chatId, birinchi.rasm, matn, birinchi.mime);
+    if (!yubordi) await sendLong(chatId, matn);
+  } else {
+    if (birinchi) await sendPhoto(chatId, birinchi.rasm, '', birinchi.mime);
+    await sendLong(chatId, matn);
+  }
+
+  for (const ilova of qolgani) {
+    await sendPhoto(chatId, ilova.rasm, '', ilova.mime);
+  }
+}
+
 // AI javobini tayyorlab yuborish. 200 qaytarilgandan keyin fonda ishlaydi.
 async function replyWithAi(chatId, text) {
   try {
@@ -107,9 +149,12 @@ async function replyWithAi(chatId, text) {
       // Tarixni javobdan oldin o'qiymiz va saqlashda o'shani qayta ishlatamiz —
       // xotiraga ikkinchi marta borish shart emas.
       const oldingi = await tarix(chatId);
-      const answer = await ask(text, oldingi);
 
-      await sendLong(chatId, answer);
+      // Vosita rasm yasasa, u shu ro'yxatga tushadi va javob bilan yuboriladi.
+      const ilovalar = [];
+      const answer = await ask(text, oldingi, { ilovalar });
+
+      await javobYubor(chatId, answer, ilovalar);
 
       // Faqat muvaffaqiyatli javob saqlanadi: xato matni suhbat tarixiga tushsa,
       // bot keyingi javoblarida o'shanga tayanib qolardi.
@@ -133,8 +178,13 @@ async function postJavobi(chatId, mavzu) {
       await sendLong(chatId, materialMatni(natija));
 
       const yakun = await postYoz(mavzu, natija);
-      await sendLong(chatId, jarayonMatni(yakun));
-      await sendLong(chatId, yakun.post);
+
+      // Kover agentlar byudjetidan tashqarida: rasm kechiksa ham post yetib boradi.
+      const koveri = await kover({ mavzu, sarlavha: yakun.post.split('\n')[0] });
+      const koverQatori = `🖼 Kover: ${koveri.usul}${koveri.sabab ? ` — ${koveri.sabab}` : ''}`;
+
+      await sendLong(chatId, `${jarayonMatni(yakun)}\n\n${koverQatori}`);
+      await javobYubor(chatId, yakun.post, koveri.rasm ? [{ rasm: koveri.rasm, mime: koveri.mime }] : []);
     });
   } catch (err) {
     console.error(`/post xato (${providerName()}):`, err);

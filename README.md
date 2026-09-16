@@ -2,7 +2,10 @@
 
 Webhook orqali ishlaydigan Telegram bot. Vercel'da serverless funksiya sifatida turadi.
 
-**Joriy bosqich: 11 — ikki agent.** `/post` da yozuvchi post yozadi, muharrir
+**Joriy bosqich: 12 — kover rasm.** `/post` endi rasm bilan chiqadi: rasm API
+ishlasa undan, ishlamasa shablon koverdan.
+
+**11-bosqich — ikki agent.** `/post` da yozuvchi post yozadi, muharrir
 uni tekshiradi va kerak bo'lsa qaytaradi.
 
 **10-bosqich — birinchi vosita.** Botda `qidiruv` vositasi bor: bilim
@@ -49,6 +52,9 @@ lib/xotira.js   # suhbat tarixi — Redis yoki funksiya xotirasi
 lib/vositalar.js       # vosita e'loni va bajarilishi
 lib/qidiruv-bilim.js   # bilim/ papkasidan qidirish
 lib/qidiruv-internet.js # Tavily orqali internet qidiruv
+lib/kover.js           # kover vositasi: API, yiqilsa shablon
+lib/kover-api.js       # rasm generatsiyasi (Gemini rasm modeli)
+lib/kover-shablon.js   # PNG yasovchi — tashqi kutubxonasiz
 lib/post.js     # /post oqimi: qidiruv, agentlar, natija
 agentlar/       # agentlar — har birining xarakteri va funksiyalari
 lib/xarakter.js # system prompt: xarakter + bilim bazasi
@@ -300,13 +306,50 @@ Uchala provayder ham vositani qo'llab-quvvatlaydi, formatlari boshqa:
 **O'chirish:** `VOSITA=off` → vositalar umuman e'lon qilinmaydi. Biror model
 e'lon formatini qabul qilmay qolsa, kodni qaytarmasdan shu bilan qutulasiz.
 
+## Kover vositasi
+
+Ikkinchi vosita — `kover`. Post uchun rasm yasaydi.
+
+```
+kover(mavzu, tavsif?, sarlavha?)
+```
+
+**Asosiy yo'l — rasm modeli.** `gemini-3.1-flash-image` (o'zgartirish: `RASM_MODEL`),
+kalit `RASM_API_KEY` yoki o'sha `GEMINI_API_KEY`. Vaqt chegarasi 15 s.
+
+Promptda "matnsiz rasm" deb yoziladi: rasm modellari harflarni buzib chizadi,
+o'zbekchani ayniqsa. Sarlavha rasmda emas, post matnida qoladi.
+
+**Zaxira yo'l — shablon kover.** Kalit yo'q, limit tugagan, API yiqilgan yoki
+kechikkan — farqi yo'q, hammasi shu yo'lga olib keladi va **hech qachon xato
+tashlamaydi**.
+
+Vercel funksiyasida rasm chizadigan hech narsa yo'q (`canvas`, `sharp` — native
+kutubxonalar), shuning uchun PNG `lib/kover-shablon.js` da qo'lda yig'iladi:
+`node:zlib` ustida IHDR/IDAT/IEND va CRC32, matn uchun ichki 5×7 nuqtali shrift.
+Natija: 1280×720, fon rangi mavzudan hisoblanadi (bir xil mavzu — bir xil rang),
+sarlavha va pastda "Prestigious".
+
+**Rasm modelga emas, foydalanuvchiga boradi.** Qidiruv natijasi matn edi —
+modelga bemalol beriladi. Rasmni esa berib bo'lmaydi, shuning uchun u *ilovalar*
+ro'yxatiga tushadi va javob bilan birga Telegramga yuboriladi. Modelga faqat
+qisqa xabar boradi: "Kover tayyor (usul: api)".
+
+Post 1024 belgidan qisqa bo'lsa rasm izohi sifatida ketadi — bitta xabar bo'ladi.
+Rasm yuborilmay qolsa matn baribir yetib boradi.
+
+**O'chirish:** `KOVER=off`.
+
 ### `/post [mavzu]`
 
 Qidiruv va ikkala agent birga ishlaydigan buyruq. Telegram'ga uchta xabar boradi:
 
 1. **Topilgan material** — qaysi bo'lak, qaysi havola
-2. **Muharrir tekshiruvi** — har rauddagi hukm va sabab
-3. **Tayyor post**
+2. **Muharrir tekshiruvi** — har rauddagi hukm va sabab, kover qaysi yo'l bilan yasalgani
+3. **Kover rasm va post** — post qisqa bo'lsa rasm izohida
+
+Kover agentlar byudjetidan tashqarida, o'z chegarasi bilan: rasm kechiksa ham
+post yetib boradi.
 
 ## Agentlar
 
