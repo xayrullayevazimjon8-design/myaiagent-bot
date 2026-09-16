@@ -2,8 +2,8 @@
 
 Webhook orqali ishlaydigan Telegram bot. Vercel'da serverless funksiya sifatida turadi.
 
-**Joriy bosqich: 2 — AI javoblar.** Kelgan matn AI'ga yuboriladi.
-`/start` va `/help` AI'siz, lokal javob beradi.
+**Joriy bosqich: 9 — suhbat xotirasi.** Kelgan matn AI'ga oldingi xabarlar bilan
+birga yuboriladi. `/start`, `/tozala` va `/help` AI'siz, lokal javob beradi.
 
 ## Uchta AI, bitta tugma
 
@@ -40,12 +40,16 @@ lib/ai.js       # qaysi AI ishlashini tanlaydi + javobni bo'laklarga bo'lish
 lib/gemini.js   # Gemini chaqiruvi
 lib/openai.js   # OpenAI chaqiruvi
 lib/claude.js   # Claude chaqiruvi
+lib/xotira.js   # suhbat tarixi — Redis yoki funksiya xotirasi
+lib/xarakter.js # system prompt: xarakter + bilim bazasi
+lib/bilim.js    # bilim/ papkasini o'qiydi
+lib/config.js   # kalitlarni tekshirish
 vercel.json     # funksiya uchun maxDuration: 60
 ```
 
-`lib/gemini.js`, `lib/claude.js` va `lib/openai.js` bir xil interfeysga ega: `ask(matn)` va
-`errorMessage(xato)`. Yangi provayder qo'shish uchun shu ikki funksiyani yozib,
-`lib/ai.js` dagi `PROVIDERS` ro'yxatiga qo'shish yetarli.
+`lib/gemini.js`, `lib/claude.js` va `lib/openai.js` bir xil interfeysga ega:
+`ask(matn, tarix)` va `errorMessage(xato)`. Yangi provayder qo'shish uchun shu ikki
+funksiyani yozib, `lib/ai.js` dagi `PROVIDERS` ro'yxatiga qo'shish yetarli.
 
 Vercel `api/` papkasidagi fayllarni avtomatik funksiyaga aylantiradi —
 shuning uchun handler ildizda emas, `api/` ichida turadi.
@@ -112,7 +116,8 @@ curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
 
 - `GET /api/bot` → `Bot ishlayapti.` (tirikligini tekshirish uchun)
 - `POST /api/bot` → Telegram update'i
-- `/start`, `/help` — tayyor javoblar, AI chaqirilmaydi
+- `/start`, `/tozala`, `/help` — tayyor javoblar, AI chaqirilmaydi
+  (`/start` va `/tozala` suhbat xotirasini ham tozalaydi)
 - Boshqa matn → AI javob beradi, uzun javob bo'laklarga bo'linadi (limit 4096 belgi)
 - Rasm, stiker va boshqalar → "Hozircha faqat matnli xabarlarni tushunaman."
 - Handler **har doim `200`** qaytaradi: xato bo'lsa ham. Aks holda Telegram
@@ -200,6 +205,52 @@ modellar turli parametrlarni qabul qiladi:
 
 Haiku'ga Opus parametrlarini yuborsangiz API xato qaytaradi va bot javob bermay
 qoladi. Modelni almashtirganda `ask()` ichidagi parametrlarni ham tekshiring.
+
+## Suhbat xotirasi
+
+Bot oxirgi **10 juftlik** (savol + javob) ni eslab qoladi va har so'rovda AI'ga
+qo'shib yuboradi. Shuning uchun "qaysi sohada ishlaysiz?" degan savoldan keyin
+kelgan "qurilish" javobini tushunadi.
+
+| Sozlama | Qiymat |
+|---|---|
+| Eslab qolinadigan juftliklar | 10 (ya'ni 20 xabar) |
+| Xotira muddati | 30 daqiqa jimlikdan keyin tozalanadi |
+| Bitta xabardan saqlanadigan qism | 2000 belgi |
+| Tozalash | `/start` yoki `/tozala` |
+| O'chirish | `XOTIRA=off` |
+
+Xotira har chat uchun alohida: `chat_id` kalit bo'lib xizmat qiladi.
+
+### Ikki saqlash usuli
+
+**Funksiya xotirasi** (standart, hech narsa sozlash kerak emas) — tarix funksiya
+nusxasining o'z xotirasida turadi. Sinov uchun yetarli, lekin **ishonchsiz**:
+Vercel funksiya nusxasini istalgan payt o'chiradi va yangi nusxa bo'sh boshlaydi.
+Suhbat o'rtasida bot oldingi gaplarni unutib qo'yishi mumkin.
+
+**Redis** (tavsiya etiladi) — [Upstash](https://upstash.com) yoki Vercel KV.
+Ikkita env var qo'ysangiz kod o'zi shunga o'tadi:
+
+```
+KV_REST_API_URL=https://...upstash.io
+KV_REST_API_TOKEN=...
+```
+
+Vercel Marketplace → Upstash Redis qo'shsangiz bu ikki nom **avtomatik**
+qo'shiladi. SDK kerak emas — kod Upstash'ning REST API'siga oddiy `fetch` bilan
+boradi. Qaysi usul ishlayotgani Vercel logida ko'rinadi:
+`suhbat xotirasi: redis`.
+
+Xotira ishlamay qolsa bot to'xtamaydi: xato logga yoziladi, suhbat esa xotirasiz
+davom etadi.
+
+### Narxga ta'siri
+
+Har juftlik keyingi so'rovlarga qo'shimcha token bo'lib qo'shiladi. To'la 10
+juftlik bilan bitta so'rov taxminan **1500–2000 token** ko'proq yeydi — o'zbekcha
+matn ingliz tilidagidan ~1.8 barobar ko'p token olishini unutmang. Xotira uzunligi
+`lib/xotira.js` dagi `MAX_JUFTLIK` bilan boshqariladi.
 
 ## Botning xarakteri
 

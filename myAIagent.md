@@ -27,6 +27,7 @@ Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
 | Xarakter | `xarakter.md` — Jarvis |
 | Bilim bazasi | `bilim/` — 4 fayl, ~5000 belgi |
 | Provayderlar | Gemini (joriy), Claude, OpenAI — `AI_PROVIDER` bilan almashtiriladi |
+| Suhbat xotirasi | Oxirgi 10 juftlik, 30 daqiqa — `lib/xotira.js` |
 
 ### Fayl tuzilishi
 
@@ -36,6 +37,7 @@ xarakter.md     # botning shaxsi (Jarvis)
 bilim/          # bilim bazasi — 4 ta .md fayl
 lib/xarakter.js # xarakter + bilim bazasini jamlaydi
 lib/bilim.js    # bilim/ papkasini o'qiydi
+lib/xotira.js   # suhbat tarixi — Redis yoki funksiya xotirasi
 lib/ai.js       # qaysi AI ishlashini tanlaydi, vaqt chegarasi, xabarni bo'laklash
 lib/claude.js   # Claude chaqiruvi
 lib/gemini.js   # Gemini chaqiruvi
@@ -44,7 +46,7 @@ lib/config.js   # kalitlarni tekshirish
 vercel.json     # maxDuration: 60
 ```
 
-Provayder fayllari bir xil interfeysga ega: `ask(matn)` va `errorMessage(xato)`.
+Provayder fayllari bir xil interfeysga ega: `ask(matn, tarix)` va `errorMessage(xato)`.
 Yangi provayder qo'shish uchun shu ikki funksiyani yozib, `lib/ai.js` dagi
 `PROVIDERS` ro'yxatiga qo'shish yetarli.
 
@@ -58,6 +60,9 @@ Yangi provayder qo'shish uchun shu ikki funksiyani yozib, `lib/ai.js` dagi
 | `GEMINI_API_KEY` | Gemini kaliti |
 | `OPENAI_API_KEY` | OpenAI kaliti (hali qo'shilmagan) |
 | `AI_API_KEY` | Umumiy zaxira nom — provayderning o'z nomi topilmasa shunga qaraladi |
+| `KV_REST_API_URL` | Upstash/Vercel KV manzili — suhbat xotirasi uchun (ixtiyoriy) |
+| `KV_REST_API_TOKEN` | O'sha Redis'ning tokeni |
+| `XOTIRA` | `off` bo'lsa suhbat xotirasi ishlamaydi |
 | `TELEGRAM_WEBHOOK_SECRET` | Ixtiyoriy himoya |
 
 ---
@@ -123,6 +128,26 @@ olmaydi.
 
 Google Cloud loyihasiga billing ulangach Gemini'ning limiti ochildi va bot
 `gemini-3.8-flash` ga qaytarildi. O'zbekchasi sezilarli yaxshi, tezligi 4.8 s.
+
+### 9-bosqich — suhbat xotirasi
+
+Shu paytgacha bot har xabarni alohida ko'rardi: "qaysi sohada ishlaysiz?" deb
+so'rab, kelgan "qurilish" javobini nima haqida ekanini bilmasdi. Ta'rif tanlash
+esa aynan ketma-ket savol-javobga qurilgan — xotirasiz asosiy vazifa ishlamas edi.
+
+`lib/xotira.js` qo'shildi: har chat uchun oxirgi 10 juftlik saqlanadi va keyingi
+so'rovda AI'ga qo'shib yuboriladi. 30 daqiqa jimlikdan keyin tarix tozalanadi,
+`/tozala` va `/start` esa uni darhol o'chiradi.
+
+Saqlash ikki xil bo'lishi mumkin: `KV_REST_API_URL` va `KV_REST_API_TOKEN`
+qo'yilgan bo'lsa Redis (Upstash REST, SDK'siz — oddiy `fetch`), bo'lmasa
+funksiyaning o'z xotirasi. Ikkinchisi sinov uchun ishlaydi, lekin Vercel funksiya
+nusxasini o'chirganda tarix yo'qoladi.
+
+Uchala provayder ham tarixni qabul qiladigan qilindi. Xotira ularning formatiga
+bog'liq emas — u `{ role: 'user' | 'bot', text }` ko'rinishida saqlanadi va har
+provayder fayli o'zi o'giradi, ya'ni `AI_PROVIDER` ni almashtirsangiz suhbat
+tarixi o'sha holicha qolaveradi.
 
 ---
 
@@ -300,6 +325,39 @@ Model bunday holatda qaysi biriga bo'ysunishni o'zi tanlaydi va javoblari oldind
 aytib bo'lmaydigan bo'lib qoladi. Xarakter va bilim bazasi bir-biriga zid
 bo'lmasligini har o'zgarishda tekshirish kerak.
 
+### Serverless funksiyada "xotira" degan narsa yo'q
+
+Oddiy `Map` da saqlangan suhbat tarixi lokalda benuqson ishlaydi va Vercel'da ham
+ishlagandek ko'rinadi — bir necha xabar ketma-ket yozilsa, ko'pincha bitta nusxa
+ularning hammasini qabul qiladi. Lekin Vercel nusxani istalgan payt o'chiradi va
+keyingi xabar bo'sh xotirali yangi nusxaga tushadi.
+
+Eng yomoni — bu **nosozlik ko'rinishida chiqmaydi**: xato ham, log ham yo'q, bot
+shunchaki oldingi gapni unutgan bo'ladi. Ishonchli xotira funksiyadan tashqarida
+turishi kerak (Redis). Kod ikkalasini ham qo'llab-quvvatlaydi va qaysi biri
+ishlayotganini bir marta logga yozadi.
+
+### Har provayder suhbat tarixini o'z formatida kutadi
+
+Bitta "tarix" tushunchasi uchun uchta har xil shakl:
+
+| Provayder | Shakli |
+|---|---|
+| Claude | `messages: [{ role: 'user' \| 'assistant', content }]` |
+| OpenAI | `input: [{ role: 'user' \| 'assistant', content }]` |
+| Gemini | `input: [{ type: 'user_input' \| 'model_output', content: [{ type: 'text', text }] }]` |
+
+Gemini'da oddiy matn o'rniga qadamlar ro'yxati kerak bo'ladi va bot javobi
+`assistant` emas, `model_output` deb belgilanadi. Shuning uchun xotira neytral
+shaklda (`role: 'user' | 'bot'`) saqlanadi — aks holda provayderni almashtirganda
+eski tarix yaroqsiz bo'lib qolardi.
+
+### Xato javobi tarixga tushmasligi kerak
+
+"Javob tayyorlashda xatolik bo'ldi" degan matn ham botning gapi — tarixga yozilsa,
+model uni suhbatning bir qismi deb qabul qiladi va keyingi javoblarida o'shanga
+tayanadi. Shuning uchun tarix faqat muvaffaqiyatli javobdan keyin yangilanadi.
+
 ### Bilim bazasi har so'rovda qayta yuboriladi
 
 System prompt 160 tokendan ~3300 tokenga o'sdi — butun baza har savolda uzatiladi.
@@ -358,5 +416,5 @@ chaqirilgan tashqi API'larni ko'rish mumkin — nosozlik qidirishda eng foydali 
 | OpenAI | Hisobda kredit yo'q, kalit Vercel'ga qo'shilmagan. Kod tayyor |
 | Bilim bazasi to'ldirilmagan | `bilim/` fayllarida `<!-- NAMUNA — to'ldiring -->` belgilari bor. Narxlar haqiqiy ($200/$500/$1000), qolgani namuna — bot ularni ishonch bilan aytadi |
 | Ta'rif tafsilotlari | Har bir ta'rifga nima kirishi aniqlanmagan, egasi keyinroq beradi |
-| Suhbat xotirasi | Yo'q — bot har xabarni alohida ko'radi, oldingi gaplarni eslamaydi |
+| Suhbat xotirasi | Bor (9-bosqich), lekin Redis ulanmagan — hozir funksiya xotirasida, ya'ni suhbat o'rtasida yo'qolishi mumkin |
 | `TELEGRAM_WEBHOOK_SECRET` | Kod tayyor, yoqilmagan |

@@ -2,8 +2,10 @@
 // Telegram yangi xabar kelganda shu manzilga POST qiladi: https://<domain>/api/bot
 //
 // Matnli xabarlar AI'ga yuboriladi — qaysi biriga, lib/ai.js hal qiladi.
+// Suhbat tarixi lib/xotira.js da saqlanadi va har so'rovda AI'ga qo'shib beriladi.
 import { waitUntil } from '@vercel/functions';
 import { ask, splitMessage, errorMessage, providerName } from '../lib/ai.js';
+import { tarix, saqla, tozala } from '../lib/xotira.js';
 
 const TELEGRAM_API = 'https://api.telegram.org';
 
@@ -45,17 +47,25 @@ async function sendTyping(chatId) {
   }
 }
 
-// Buyruqlarga AI'siz, lokal javob. null qaytsa — xabar Claude'ga ketadi.
+// Suhbatni noldan boshlaydigan buyruqlar: javobdan oldin xotira tozalanadi.
+const TOZALOVCHI_BUYRUQLAR = ['/start', '/tozala'];
+
+// Buyruqlarga AI'siz, lokal javob. null qaytsa — xabar AI'ga ketadi.
 export function commandReply(text) {
   if (text.startsWith('/start')) {
     return 'Salom! Men AI yordamchi botman. Savolingizni yozing.';
   }
+  if (text.startsWith('/tozala')) {
+    return 'Suhbat tarixi tozalandi. Yangi suhbat boshlaymiz.';
+  }
   if (text.startsWith('/help')) {
     return [
       'Shunchaki savolingizni yoki matnni yozing — men javob beraman.',
+      'Suhbat davomida oldingi xabarlarni eslab qolaman.',
       '',
       'Buyruqlar:',
       '/start — boshlash',
+      '/tozala — suhbat tarixini unutish',
       '/help — shu yordam',
     ].join('\n');
   }
@@ -72,10 +82,18 @@ async function replyWithAi(chatId, text) {
   const typing = setInterval(() => sendTyping(chatId), TYPING_REFRESH_MS);
 
   try {
-    const answer = await ask(text);
+    // Tarixni javobdan oldin o'qiymiz va saqlashda o'shani qayta ishlatamiz —
+    // xotiraga ikkinchi marta borish shart emas.
+    const oldingi = await tarix(chatId);
+    const answer = await ask(text, oldingi);
+
     for (const part of splitMessage(answer)) {
       await sendMessage(chatId, part);
     }
+
+    // Faqat muvaffaqiyatli javob saqlanadi: xato matni suhbat tarixiga tushsa,
+    // bot keyingi javoblarida o'shanga tayanib qolardi.
+    await saqla(chatId, oldingi, text, answer);
   } catch (err) {
     console.error(`AI xato (${providerName()}):`, err);
     await sendMessage(chatId, errorMessage(err));
@@ -125,6 +143,9 @@ export default async function handler(req, res) {
     } else if (chatId) {
       const command = commandReply(text);
       if (command) {
+        if (TOZALOVCHI_BUYRUQLAR.some((b) => text.startsWith(b))) {
+          await tozala(chatId);
+        }
         await sendMessage(chatId, command);
       } else {
         // Telegram 60 soniyada javob kutadi, kutmasa xabarni qayta yuboradi.
