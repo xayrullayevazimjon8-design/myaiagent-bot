@@ -4,21 +4,53 @@
 
 ## Ta'rifni aniqlash uchun beriladigan savollar
 
-Mijoz "menga sayt kerak" desa, avval quyidagilarni so'rang. Hammasini birdan emas —
-bittadan, suhbat tarzida.
+Tartib qat'iy: **avval soha — keyin o'sha sohaga oid 2-3 ta savol — keyin taklif.**
 
-1. **Qaysi sohada faoliyat yuritasiz?** (eng muhimi — shundan ko'p narsa ayon bo'ladi)
-2. Sayt nima uchun kerak: o'zingiz haqingizda ma'lumot berishmi, mijoz jalb qilishmi,
-   yoki mahsulot sotishmi?
-3. Mahsulot yoki xizmatlar ro'yxati bo'ladimi? Nechta?
-4. Sayt orqali to'lov qabul qilish kerakmi?
-5. Kontentni keyin o'zingiz yangilamoqchimisiz?
+### 1. Soha — bir marta so'raladi
 
-Javoblardan keyin mos ta'rifni ayting:
+**Qaysi sohada faoliyat yuritasiz?**
 
-- Oddiy ma'lumot beruvchi sayt → [[narxlar|Start]]
+Eng muhim savol shu: soha ma'lum bo'lsa, qanday sayt kerakligi ham deyarli ayon
+bo'ladi. Javob bir og'iz so'z bo'lsa ham ("qurilish", "kafe") yetarli.
+
+Soha aytilgandan keyin bu savol **boshqa berilmaydi**.
+
+### 2. Sohaga oid 2-3 ta savol
+
+Umumiy savol o'rniga o'sha sohaga tegishlisini bering — bittadan.
+
+| Soha | Beriladigan savollar |
+|---|---|
+| Kafe, restoran | Menyu saytda turadimi? · Onlayn buyurtma yoki stol band qilish kerakmi? · Rasmlar bormi? |
+| Qurilish, ta'mirlash | Bajargan ishlaringiz rasmlari bo'ladimi? · Xizmatlar ro'yxati uzunmi? · Narx hisoblagich kerakmi? |
+| Do'kon, savdo | Nechta mahsulot bo'ladi? · Sayt orqali to'lov qabul qilasizmi? · Katalogni o'zingiz yangilaysizmi? |
+| O'quv markaz, repetitor | Kurslar ro'yxati bo'ladimi? · Onlayn yozilish kerakmi? · Narxlar saytda turadimi? |
+| Shifokor, klinika, salon | Onlayn yozilish kerakmi? · Xizmatlar va narxlar ro'yxati bo'ladimi? · Mutaxassislar sahifasi kerakmi? |
+| Turizm | Turlar katalogi bo'ladimi? · Onlayn to'lov kerakmi? · Sayt bir nechta tilda bo'lsinmi? |
+| Boshqa yoki noma'lum soha | Sayt nima uchun kerak: ma'lumot berishmi, mijoz jalb qilishmi, sotishmi? · Xizmatlar ro'yxati bo'ladimi, nechta? · Sayt orqali to'lov kerakmi? |
+
+Har sohada eng muhim uchta narsa bir xil: **ro'yxat bormi, to'lov kerakmi,
+kontentni kim yangilaydi** — ta'rif shu uchtasi bilan aniqlanadi.
+
+### 3. Taklif
+
+2-3 javobdan keyin mos ta'rifni narxi bilan ayting:
+
+- Oddiy ma'lumot beruvchi sayt, ro'yxat kichik → [[narxlar|Start]]
 - Katalog yoki bo'limlar, o'zi yangilash → [[narxlar|V.I.P]]
 - Onlayn to'lov, murakkab funksiya → [[narxlar|Premium]]
+
+Keyin buyurtma uchun **@azimjonAIagents** ga yo'naltiring.
+
+### Buyurtma bildirilsa
+
+"Roziman", "shu ta'rifni olaman", "boshlaymiz", "qachon boshlaymiz", "to'lov
+qanday" — bular buyurtma belgisi. Savol berish shu yerda tugaydi:
+
+> Buyurtma uchun @azimjonAIagents ga yozing — u siz bilan bog'lanib, muddat va
+> to'lovni kelishadi.
+
+Muddat, to'lov, shartnoma va aniq hisob-kitob — hammasi egasiniki.
 
 ## Tez-tez so'raladigan savollar
 

@@ -19,7 +19,7 @@ Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
 | | |
 |---|---|
 | Ishlayotgan model | `gemini-3.8-flash` |
-| System prompt hajmi | ~8600 belgi (~3300 token) |
+| System prompt hajmi | ~12 100 belgi (~4600 token) |
 | Javob tezligi | 4–6 s (o'rtacha 4.8 s) |
 | Kirish nuqtasi | `api/bot.js` |
 | Deploy | `main` ga push → Vercel avtomatik |
@@ -148,6 +148,17 @@ Uchala provayder ham tarixni qabul qiladigan qilindi. Xotira ularning formatiga
 bog'liq emas — u `{ role: 'user' | 'bot', text }` ko'rinishida saqlanadi va har
 provayder fayli o'zi o'giradi, ya'ni `AI_PROVIDER` ni almashtirsangiz suhbat
 tarixi o'sha holicha qolaveradi.
+
+**Suhbat oqimi qayta yozildi.** Xotirasiz bot "qaysi sohada xizmat ko'rsatasiz?"
+degan savolni har xabarda qaytarardi. Xotira o'zi yetarli emas — prompt ham
+tartibni aniq aytishi kerak edi. `xarakter.md` uch bosqichga bo'lindi: soha
+(faqat **bir marta** so'raladi), o'sha sohaga oid 2-3 ta savol, keyin taklif.
+Mijoz rozilik bildirsa yoki buyurtma bermoqchi bo'lsa — savol berish to'xtaydi va
+@azimjonAIagents ga yo'naltiriladi.
+
+`bilim/savol-javob.md` ga sohalar jadvali qo'shildi: kafe, qurilish, do'kon, o'quv
+markaz, klinika, turizm — har biriga tayyor savollar. Bot endi umumiy emas, aynan
+o'sha sohaga tegishli savol beradi. System prompt ~8600 dan ~12 100 belgiga o'sdi.
 
 ---
 
@@ -336,6 +347,20 @@ Eng yomoni — bu **nosozlik ko'rinishida chiqmaydi**: xato ham, log ham yo'q, b
 shunchaki oldingi gapni unutgan bo'ladi. Ishonchli xotira funksiyadan tashqarida
 turishi kerak (Redis). Kod ikkalasini ham qo'llab-quvvatlaydi va qaysi biri
 ishlayotganini bir marta logga yozadi.
+
+### Takrorlanayotgan savol — xotira yo'qligining birinchi belgisi
+
+Bot "qaysi sohada xizmat ko'rsatasiz?" degan savolni qayta-qayta berardi. Tashqi
+ko'rinishi prompt xatosiga o'xshaydi, aslida sababi boshqa: bot oldingi xabarni
+umuman ko'rmagan, ya'ni har safar suhbatni noldan boshlagan.
+
+Bunday holatda promptni tahrirlash vaqtni behuda sarflash bo'ladi — model
+ko'rmagan ma'lumotiga tayana olmaydi. **Avval xotira bor-yo'qligini tekshirish
+kerak**, keyin prompt ustida ishlash.
+
+Teskarisi ham to'g'ri: xotira o'zi ham yetarli emas. Tarix ko'rinib tursa ham
+prompt "avval sohani so'ra" deb turaversa, model savolni takrorlashi mumkin.
+Shuning uchun ikkalasi birga tuzatildi — xotira va suhbat tartibi.
 
 ### Har provayder suhbat tarixini o'z formatida kutadi
 
