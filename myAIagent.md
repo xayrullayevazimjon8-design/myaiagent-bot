@@ -43,9 +43,11 @@ lib/xotira.js   # suhbat tarixi — Redis yoki funksiya xotirasi
 lib/vositalar.js        # vosita e'loni va bajarilishi
 lib/qidiruv-bilim.js    # bilim/ dan qidirish
 lib/qidiruv-internet.js # Tavily orqali internet qidiruv
-lib/post.js     # /post oqimi: material, yozuvchi, muharrir
-lib/agent.js    # agentni o'z system prompti bilan ishga tushiradi
-agentlar/       # agentlarning xarakter fayllari
+lib/post.js     # /post oqimi: qidiruv, agentlar, natija
+agentlar/       # agentlar — har birining xarakteri (.md) va funksiyalari (.js)
+  agent.js         # umumiy qism: xarakter faylini o'qish va ishga tushirish
+  yozuvchi.md/.js  # post yozuvchi
+  muharrir.md/.js  # tekshiruvchi
 lib/ai.js       # qaysi AI ishlashini tanlaydi, vaqt chegarasi, xabarni bo'laklash
 lib/claude.js   # Claude chaqiruvi
 lib/gemini.js   # Gemini chaqiruvi
@@ -206,8 +208,11 @@ qolsa, bot yana ziddiyatga tushardi.
 ### 11-bosqich — ikki agent: yozuvchi va muharrir
 
 `/post` endi bitta chaqiruv emas, ketma-ketlik: qidiruv → yozuvchi → muharrir.
-Har agentning xarakteri alohida faylda (`agentlar/yozuvchi.md`,
-`agentlar/muharrir.md`) — kodda emas.
+
+Har bir agentning hammasi `agentlar/` papkasida: xarakteri `<nom>.md` da,
+funksiyalari `<nom>.js` da. `lib/post.js` faqat oqimni biladi — kim qachon
+chaqiriladi — agentlar ichida nima borligini bilmaydi. Yangi agent qo'shish
+uchun shu ikki fayl yoziladi, oqimga bitta chaqiruv qo'shiladi.
 
 Yozuvchi: Jarvis ohangida, 5-8 qator, oxirida savol yoki chaqiriq, faqat
 materialdagi faktlar. Muharrir: mavzuga moslik, uydirma fakt, ohang va uzunlikni

@@ -1,19 +1,24 @@
-// Agentlar — har biri o'z xarakter fayli bilan ishlaydigan alohida rol.
+// Agentlarning umumiy qismi: xarakter faylini o'qish va ishga tushirish.
 //
 // Jarvis mijoz bilan gaplashadi, agentlar esa ichki ish bajaradi: yozuvchi
-// post yozadi, muharrir uni tekshiradi. Har birining xarakteri `agentlar/`
-// papkasidagi .md faylda — kodda emas, xuddi `xarakter.md` kabi.
+// post yozadi, muharrir uni tekshiradi.
+//
+// Har bir agent shu papkada ikki fayldan iborat:
+//   <nom>.md — xarakteri (system prompt), kodda emas — xuddi xarakter.md kabi
+//   <nom>.js — o'sha agentning funksiyalari: topshiriq matni, javobni o'qish
+//
+// Yangi agent qo'shish uchun shu ikki faylni yozish yetarli.
 //
 // Agentlar vositasiz ishlaydi: yozuvchiga material allaqachon berilgan,
 // muharrirga tekshiriladigan matn berilgan — qidiruv ikkalasiga ham kerak emas.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ask } from './ai.js';
+import { ask } from '../lib/ai.js';
 
 // ESM'da __dirname yo'q — yo'lni import.meta.url dan olamiz.
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const PAPKA = path.join(HERE, '..', 'agentlar');
+// Xarakter fayllari shu papkaning o'zida: agentlar/<nom>.md
+const PAPKA = path.dirname(fileURLToPath(import.meta.url));
 
 // Fayl topilmasa ish butunlay to'xtamasligi kerak. Vercel'da bu odatda
 // vercel.json dagi includeFiles ro'yxatiga agentlar/** qo'shilmaganini bildiradi.

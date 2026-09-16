@@ -49,9 +49,8 @@ lib/xotira.js   # suhbat tarixi — Redis yoki funksiya xotirasi
 lib/vositalar.js       # vosita e'loni va bajarilishi
 lib/qidiruv-bilim.js   # bilim/ papkasidan qidirish
 lib/qidiruv-internet.js # Tavily orqali internet qidiruv
-lib/post.js     # /post oqimi: material, yozuvchi, muharrir
-lib/agent.js    # agent faylini o'qib, alohida system prompt bilan ishga tushiradi
-agentlar/       # agentlarning xarakter fayllari
+lib/post.js     # /post oqimi: qidiruv, agentlar, natija
+agentlar/       # agentlar — har birining xarakteri va funksiyalari
 lib/xarakter.js # system prompt: xarakter + bilim bazasi
 lib/bilim.js    # bilim/ papkasini o'qiydi
 lib/config.js   # kalitlarni tekshirish
@@ -311,16 +310,35 @@ Qidiruv va ikkala agent birga ishlaydigan buyruq. Telegram'ga uchta xabar boradi
 
 ## Agentlar
 
-Jarvis mijoz bilan gaplashadi, agentlar ichki ish bajaradi. Har birining
-xarakteri alohida faylda:
+Jarvis mijoz bilan gaplashadi, agentlar ichki ish bajaradi. Har bir agentning
+**hammasi bitta joyda** — `agentlar/` papkasida:
 
 ```
-agentlar/yozuvchi.md   # materialdan post yozadi
-agentlar/muharrir.md   # yozilganini tekshiradi
+agentlar/
+  agent.js       # umumiy qism: xarakter faylini o'qish va ishga tushirish
+  yozuvchi.md    # yozuvchining xarakteri — ohang, uzunlik, tuzilishi
+  yozuvchi.js    # yozuvchining funksiyalari — yoz(), qaytaYoz()
+  muharrir.md    # muharrirning xarakteri va tekshirish mezonlari
+  muharrir.js    # muharrirning funksiyalari — tekshir(), hukmniOqi()
 ```
 
-Ohangni yoki mezonlarni o'zgartirish uchun shu fayllarni tahrirlab push qiling —
+Ohangni yoki mezonlarni o'zgartirish uchun `.md` faylni tahrirlab push qiling —
 kodga tegish shart emas, xuddi `xarakter.md` kabi.
+
+`lib/post.js` faqat oqimni boshqaradi: qachon kim chaqirilishini biladi, lekin
+agentlar ichida nima borligini bilmaydi.
+
+### Yangi agent qo'shish
+
+Ikki fayl yetarli:
+
+1. `agentlar/<nom>.md` — agentning xarakteri. `lib/agent.js` uni o'zi topadi.
+2. `agentlar/<nom>.js` — funksiyalari. Ichida `ishlat('<nom>', topshiriq)`
+   chaqiriladi, javob qaytariladi.
+
+Keyin `lib/post.js` (yoki boshqa oqim fayli) o'sha funksiyani chaqiradi.
+Fayl topilmasa bot to'xtamaydi — zaxira promptga o'tadi va logga ogohlantirish
+yozadi.
 
 **Oqim:** yozuvchi qoralama yozadi → muharrir tekshiradi → "qayta yoz" bo'lsa
 yozuvchi sababni hisobga olib tuzatadi. Ko'pi bilan **2 marta** qaytariladi,
