@@ -377,6 +377,36 @@ shunchaki oldingi gapni unutgan bo'ladi. Ishonchli xotira funksiyadan tashqarida
 turishi kerak (Redis). Kod ikkalasini ham qo'llab-quvvatlaydi va qaysi biri
 ishlayotganini bir marta logga yozadi.
 
+### Gemini'ga fikrlash qadamini qaytarmasang, vosita halqasi yiqiladi
+
+Vosita production'da birinchi marta ishlaganda log shunday chiqdi:
+
+```
+qidiruv: "O'zbekiston Markaziy banki dollar kursi bugun" (internet) → bilim 0, internet ok 5
+AI xato (gemini): BadRequestError: 400 Request contains an invalid argument.
+    at async Module.ask (file:///var/task/lib/gemini.js:57:25)
+```
+
+Ya'ni model qidiruvni chaqirgan, Tavily 5 ta natija qaytargan — va shundan keyin
+**ikkinchi so'rov** yiqilgan. Foydalanuvchi esa oddiy "xatolik bo'ldi" matnini
+ko'rgan: tashqaridan qaraganda internet qidiruv umuman ishlamayotgandek.
+
+Sababi: modelning javobidan `function_call` va `model_output` qadamlarini olib,
+`thought` qadamlarini tashlab yuborgandim — ular kerakmasdek tuyulgandi. Aslida
+`ThoughtStep` da `signature` maydoni bor: *"A signature hash for backend
+validation"*. Imzo qaytarilmasa backend chaqiruvni haqiqiy deb hisoblamaydi.
+
+**Qoida: modelning chiqishini o'zgartirmasdan, butunligicha qaytarish kerak.**
+Qaysi qadam "keraksiz" ko'rinishidan qat'i nazar.
+
+### Xato matni loglarni ikki barobar ko'rsatardi
+
+O'sha loglarda bitta nosozlik ikkita bo'lib ko'rinardi: "AI xato" va yonida
+"Chegaradan keyin kelgan AI xatosi". Ikkinchisi vaqt chegarasi ishlaganini
+bildirishi kerak edi, lekin `call.catch()` har qanday xatoda yozayotgan edi —
+chegara umuman ishlamagan bo'lsa ham. Endi faqat chegara haqiqatan g'olib
+chiqqanda yoziladi.
+
 ### Halqaning tugashi model xulqiga bog'liq bo'lmasligi kerak
 
 Vosita halqasining birinchi varianti shunday edi: "model vosita chaqirmaguncha
@@ -505,6 +535,6 @@ chaqirilgan tashqi API'larni ko'rish mumkin — nosozlik qidirishda eng foydali 
 | Bilim bazasi to'ldirilmagan | `bilim/` fayllarida `<!-- NAMUNA — to'ldiring -->` belgilari bor. Narxlar haqiqiy ($200/$500/$1000), qolgani namuna — bot ularni ishonch bilan aytadi |
 | Ta'rif tafsilotlari | Har bir ta'rifga nima kirishi aniqlanmagan, egasi keyinroq beradi |
 | Suhbat xotirasi | Bor (9-bosqich), lekin Redis ulanmagan — hozir funksiya xotirasida, ya'ni suhbat o'rtasida yo'qolishi mumkin |
-| `TAVILY_API_KEY` | Qo'yilmagan — qidiruv hozir faqat bilim bazasidan ishlaydi |
+| ~~`TAVILY_API_KEY`~~ | Qo'yildi va ishlayapti — production logida `internet ok 5` |
 | Bilim bazasi promptda ham, vositada ham | Baza har so'rovda promptga to'liq qo'shiladi (~3300 token). Qidiruv vositasi bo'lgach bu ortiqcha — bazani promptdan olib tashlash mumkin |
 | `TELEGRAM_WEBHOOK_SECRET` | Kod tayyor, yoqilmagan |
