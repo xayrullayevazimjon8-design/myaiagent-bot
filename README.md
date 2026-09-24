@@ -221,7 +221,13 @@ pastda — hamma agentning holati. `?demo=1` — soxta jurnal bilan namoyish.
 
 - `ofis.html` — bitta fayl, kutubxonasiz; hamma narsa canvas'da chiziladi
 - `lib/jurnal.js` — agentlar har qadamni yozadi (Redis ro'yxati, oxirgi 200 qator)
-- `api/jurnal.js` — jurnalni markdown qilib beradi (`/jurnal.md`), sahifa uni har 3 soniyada o'qiydi
+- `api/jurnal.js` — jurnalni markdown qilib beradi (`/jurnal.md`)
+
+**Limitlar:** har o'qish — Vercel'da bitta funksiya chaqiruvi va Redis'da bitta
+buyruq. Shuning uchun sahifa ish bo'layotganda 10 s, jimlikda 30–60 s da bir marta
+o'qiydi, oyna yashirin yoki yopiq bo'lsa umuman o'qimaydi. Vercel CDN javobni
+10 s saqlaydi (`s-maxage=10`) — nechta odam ochib turmasin, funksiya 10 soniyada
+ko'pi bilan bir marta chaqiriladi (oyiga ~260 ming chaqiruvdan oshmaydi).
 
 Jurnal qatori: `- <vaqt> | <agent> | <holat> | <harakat>`, eng yangisi birinchi.
 Mijozning savoli, egasining izohi va postning to'liq matni jurnalga tushmaydi — sahifa ochiq.
