@@ -359,7 +359,9 @@ test('jurnal: /post har agentni kutmoqda → ishlayapti → tugatdi qiladi, /jur
   };
   await jurnalHandler({ method: 'GET' }, res);
   assert.match(sarlavhalar['Content-Type'], /text\/markdown/);
-  assert.equal(sarlavhalar['Cache-Control'], 'no-store');
+  // CDN 10 s saqlaydi — limitlarni tejash uchun; brauzer esa saqlamaydi.
+  assert.match(sarlavhalar['Cache-Control'], /s-maxage=10/);
+  assert.match(sarlavhalar['Cache-Control'], /max-age=0/);
   assert.match(tana, /^# Agentlar jurnali/);
   assert.match(tana, /\n- \S+ \| rasm \| tugatdi \| Kover tayyor/);
 });

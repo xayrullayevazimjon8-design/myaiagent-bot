@@ -187,7 +187,13 @@
 
 // ─── Sozlamalar ────────────────────────────────────────────────────────────
 const W = 640, H = 400;              // ofis xaritasining "piksel" o'lchami
-const YANGILASH_MS = 3000;           // jurnalni o'qish oralig'i
+// Jurnalni o'qish oralig'i. Har o'qish — Vercel'da bitta funksiya chaqiruvi va
+// Redis'da bitta buyruq, ikkalasining ham bepul limiti bor. Shuning uchun:
+//   - ish bo'layotganda 10 s, jimlikda 30 s, uzoq jimlikda 60 s
+//   - oyna yashirin bo'lsa umuman so'ralmaydi
+const TEZ_MS = 10_000;               // kimdir ishlayapti yoki navbatda
+const SEKIN_MS = 30_000;             // oxirgi harakatdan 2 daqiqa o'tgan
+const JIM_MS = 60_000;               // oxirgi harakatdan 15 daqiqa o'tgan
 const DAM_OLISH_MS = 45 * 1000;      // "tugatdi"dan keyin shuncha vaqt o'tsa — dam olishga
 const QOTISH_MS = 3 * 60 * 1000;     // "ishlayapti" shundan uzoq tursa — ogohlantirish
 const TEZLIK = 55;                   // yurish tezligi, piksel/soniya
@@ -822,7 +828,9 @@ async function yangila() {
     let matn;
     if (DEMO) matn = demoMatn();
     else {
-      const javob = await fetch(MANZIL, { cache: 'no-store' });
+      // Standart kesh rejimi: brauzer ETag bilan tekshiradi, Vercel CDN esa
+      // bir necha soniyalik nusxani beradi (api/jurnal.js dagi Cache-Control).
+      const javob = await fetch(MANZIL);
       if (!javob.ok) throw new Error(`HTTP ${javob.status}`);
       matn = await javob.text();
     }
@@ -975,8 +983,33 @@ yangila().then(() => {
   // Birinchi ochilishda agentlar yurib kelmasin — darhol joyida tursin.
   for (const a of AGENTLAR) { joyiniTanla(a); if (a.yol.length) { const [x, y] = a.yol.at(-1); a.pos = { x, y }; a.yol = []; } }
   requestAnimationFrame(kadr);
+  navbatdagiOqish();
 });
-setInterval(yangila, YANGILASH_MS);
+
+// Keyingi o'qishgacha kutish: kimdir ishlayotgan bo'lsa tez, jim bo'lsa sekin.
+function oraliq() {
+  if (DEMO) return 3000;
+  const band = AGENTLAR.some((a) => a.oxirgi?.holat === 'ishlayapti' || a.oxirgi?.holat === 'kutmoqda');
+  const oxirgi = yozuvlar[0]?.vaqt ?? 0;
+  const jimlik = Date.now() - oxirgi;
+  if (band || jimlik < 2 * 60_000) return TEZ_MS;
+  if (jimlik < 15 * 60_000) return SEKIN_MS;
+  return JIM_MS;
+}
+
+let taymer = null;
+function navbatdagiOqish() {
+  clearTimeout(taymer);
+  if (document.hidden) return;            // yashirin oynada so'rov yo'q
+  taymer = setTimeout(async () => { await yangila(); navbatdagiOqish(); }, oraliq());
+}
+
+// Oynaga qaytilganda darhol yangilanadi va navbat qayta boshlanadi.
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden) { clearTimeout(taymer); aloqa('', 'pauza — oyna yashirin'); return; }
+  await yangila();
+  navbatdagiOqish();
+});
 </script>
 </body>
 </html>
