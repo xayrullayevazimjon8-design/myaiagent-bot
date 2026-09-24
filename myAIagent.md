@@ -625,6 +625,16 @@ eski tarix yaroqsiz bo'lib qolardi.
 model uni suhbatning bir qismi deb qabul qiladi va keyingi javoblarida o'shanga
 tayanadi. Shuning uchun tarix faqat muvaffaqiyatli javobdan keyin yangilanadi.
 
+### Tugmalar ishlamasa — webhook callback_query ni o'tkazmayapti
+
+13-bosqich deploy qilingach, `/post` ishladi, lekin tugmalar bosilganda Vercel
+logida birorta so'rov ham ko'rinmadi. Kod aybdor emas edi: webhook avval
+`allowed_updates` bilan faqat xabarlar uchun o'rnatilgan, Telegram
+`callback_query` ni umuman yubormagan. `setWebhook` ga `callback_query` ni
+qo'shish kifoya.
+
+Belgisi: tugma bosiladi, soat belgisi aylanadi, logda esa hech narsa yo'q.
+
 ### Bilim bazasi har so'rovda qayta yuboriladi
 
 System prompt 160 tokendan ~3300 tokenga o'sdi — butun baza har savolda uzatiladi.
@@ -659,7 +669,7 @@ mijozga aytilgan noto'g'ri va'da.
 ### Webhook
 
 ```bash
-curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://myaiagent-bot.vercel.app/api/bot"
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://myaiagent-bot.vercel.app/api/bot&allowed_updates=%5B%22message%22,%22edited_message%22,%22callback_query%22%5D"
 ```
 
 ```bash

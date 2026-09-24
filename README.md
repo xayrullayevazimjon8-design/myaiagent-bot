@@ -121,14 +121,18 @@ deploy'ga tushadi. Ro'yxatdagi "Needs Attention" yorlig'i aynan shuni eslatadi.
 ## 4. Webhook'ni ulash
 
 ```bash
-curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<domain>/api/bot"
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<domain>/api/bot&allowed_updates=%5B%22message%22,%22edited_message%22,%22callback_query%22%5D"
 ```
 
 Secret ishlatsangiz:
 
 ```bash
-curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" -H "Content-Type: application/json" -d '{"url":"https://<domain>/api/bot","secret_token":"<SECRET>"}'
+curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" -H "Content-Type: application/json" -d '{"url":"https://<domain>/api/bot","secret_token":"<SECRET>","allowed_updates":["message","edited_message","callback_query"]}'
 ```
+
+`allowed_updates` da `callback_query` bo'lishi shart — busiz post konveyerining
+tugmalari (Chiqar / Qayta yoz / Bekor) bosilganda Telegram botga hech narsa
+yubormaydi va tugmalar "ishlamaydi".
 
 Holatni ko'rish:
 
