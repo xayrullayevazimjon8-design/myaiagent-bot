@@ -17,6 +17,7 @@ import {
   kutilayotganIzoh, izohniBekorQil, izohBilanQayta,
 } from '../lib/konveyer.js';
 import { yangiId } from '../lib/qoralama.js';
+import * as jurnal from '../lib/jurnal.js';
 
 // Telegram "yozmoqda..." holatini qancha vaqtda yangilash (u ~5 soniyada o'chadi).
 const TYPING_REFRESH_MS = 4000;
@@ -123,13 +124,18 @@ async function replyWithAi(chatId, text) {
 async function postJavobi(chatId, mavzu) {
   try {
     await yozmoqda(chatId, async () => {
+      // Ofis sahifasida hamma agent navbatga turadi.
+      for (const agent of jurnal.AGENTLAR) await jurnal.yoz(agent, 'kutmoqda', `Navbatda: ${mavzu}`);
+
       const natija = await qidiruvniBajar({ sorov: mavzu, manba: 'hammasi' });
       await sendLong(chatId, materialMatni(natija));
 
       const yakun = await postYoz(mavzu, natija);
 
       // Kover agentlar byudjetidan tashqarida: rasm kechiksa ham post yetib boradi.
-      const koveri = await kover({ mavzu, sarlavha: yakun.post.split('\n')[0] });
+      const koveri = await jurnal.kuzat('rasm', `Kover chizmoqda: ${mavzu}`,
+        () => kover({ mavzu, sarlavha: yakun.post.split('\n')[0] }),
+        (k) => `Kover tayyor: ${k.usul}${k.sabab ? ` (${k.sabab})` : ''}`);
       const koverQatori = `🖼 Kover: ${koveri.usul}${koveri.sabab ? ` — ${koveri.sabab}` : ''}`;
 
       await sendLong(chatId, `${jarayonMatni(yakun)}\n\n${koverQatori}`);
