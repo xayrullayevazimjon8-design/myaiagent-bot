@@ -21,7 +21,7 @@ Bot **Gemini**, **Claude** va **OpenAI** bilan ishlay oladi. Qaysi biri ishlashi
 | `AI_PROVIDER` | Model | Izoh |
 |---|---|---|
 | `gemini` (joriy) | `gemini-3.8-flash` | Bepul tarifda limit juda past |
-| `claude` | `claude-haiku-4-5` | Tez va arzon; fikrlash o'chirilgan |
+| `claude` | `claude-opus-5-5` | Fikrlash doim yoqiq, effort `low` |
 | `openai` | `gpt-6-astra` | Hisobda kredit kerak |
 
 Noto'g'ri qiymat yozilsa bot to'xtamaydi — logga ogohlantirish yozib, `gemini` ga qaytadi.
@@ -220,6 +220,7 @@ modellar turli parametrlarni qabul qiladi:
 |---|---|---|
 | `claude-haiku-4-5` | `budget_tokens` bilan yoqiladi; hozir o'chirilgan | **Xato beradi** |
 | `claude-opus-5` | `{ type: 'adaptive' }` | Ishlaydi (`low`…`max`) |
+| `claude-opus-5-5` (joriy) | Doim yoqiq — `disabled` va `budget_tokens` **xato beradi** | Ishlaydi, standart `medium`; botda `low` |
 
 Haiku'ga Opus parametrlarini yuborsangiz API xato qaytaradi va bot javob bermay
 qoladi. Modelni almashtirganda `ask()` ichidagi parametrlarni ham tekshiring.
