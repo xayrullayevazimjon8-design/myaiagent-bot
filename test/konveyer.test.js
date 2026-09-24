@@ -337,11 +337,11 @@ test('jurnal: /post har agentni kutmoqda → ishlayapti → tugatdi qiladi, /jur
 
   // Oldingi sinovlar ham jurnalga yozgan — shu /post boshlangan joydan olamiz.
   const qatorlar = (await jurnal.qatorlar()).slice().reverse().map((q) => q.slice(2).split(' | '));
-  const boshi = qatorlar.findIndex(([, a, , h]) => a === 'yozuvchi' && h === 'Navbatda: jurnal sinovi');
+  const boshi = qatorlar.findIndex(([, a, , h]) => a === 'qidiruvchi' && h === 'Navbatda: jurnal sinovi');
   const songgi = qatorlar.slice(boshi);
   const holatlari = (agent) => songgi.filter(([, a]) => a === agent).map(([, , h]) => h);
 
-  for (const agent of ['yozuvchi', 'muharrir', 'rasm']) {
+  for (const agent of ['qidiruvchi', 'yozuvchi', 'muharrir', 'rasm']) {
     const h = holatlari(agent);
     assert.equal(h[0], 'kutmoqda', `${agent} navbatdan boshlanadi`);
     assert.equal(h.at(-1), 'tugatdi', `${agent} tugatdi bilan tugaydi`);
@@ -437,4 +437,13 @@ test('rasm API yiqilsa egasiga aytiladi — shablon bir xil chiqishi yashirilmay
   chaqiruvlar = [];
   await yubor(bos(EGA, eski.data['🎨 Yangi rasm'], eski.message));
   assert.ok(matnlar().some((m) => m.includes('Rasm API ishlamadi (limit tugadi)')));
+});
+
+test('jurnal: Jarvis chatdagi javobni yozadi, lekin savol matnini emas', async () => {
+  const jurnal = await import('../lib/jurnal.js');
+  await yubor(xabar(BEGONA, 'maxfiy savol matni'));
+  const [oxirgi, oldingi] = await jurnal.qatorlar();
+  assert.match(oldingi, /\| jarvis \| ishlayapti \| Mijozga javob yozmoqda$/);
+  assert.match(oxirgi, /\| jarvis \| tugatdi \| Javob berdi$/);
+  assert.ok(!(await jurnal.markdown()).includes('maxfiy savol'));
 });

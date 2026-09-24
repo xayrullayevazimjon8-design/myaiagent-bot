@@ -67,7 +67,7 @@ lib/redis.js    # Upstash REST — xotira va qoralama uchun umumiy
 lib/telegram.js # Telegram Bot API chaqiruvlari
 lib/jurnal.js   # agentlar jurnali — ofis sahifasi uchun
 api/jurnal.js   # /jurnal.md
-ofis.html       # agentlar ofisi — /ofis
+ofis.html       # pikselli agentlar ofisi — /ofis
 test/           # sinovlar — npm test
 agentlar/       # agentlar — har birining xarakteri va funksiyalari
 lib/xarakter.js # system prompt: xarakter + bilim bazasi
@@ -197,16 +197,33 @@ curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
 
 ## Agentlar ofisi
 
-`https://myaiagent-bot.vercel.app/ofis` — yozuvchi, muharrir va rasm agentining
-kartochkalari: holati (kutmoqda / ishlayapti / tugatdi), oxirgi harakati va
-qachon bo'lgani. Sahifa `/jurnal.md` ni har 3 soniyada o'qib o'zi yangilanadi.
+`https://myaiagent-bot.vercel.app/ofis` — pikselli 2D ofis: olti xona (qabulxona,
+kutubxona, majlis xonasi, tahririyat, studiya, dam olish), besh agent. Har agent
+holatiga qarab yurib boradi:
 
-- `ofis.html` — bitta fayl, kutubxonasiz
+| Holat | Qayerda |
+|---|---|
+| kutmoqda | Majlis xonasida navbat kutadi |
+| ishlayapti | O'z stolida — monitori yonadi, pufakchada nima qilayotgani |
+| tugatdi | Stolida ✓ bilan turadi, 45 soniyadan keyin dam olish xonasiga ketadi |
+
+| Agent | Joyi | Nima qiladi |
+|---|---|---|
+| Jarvis | Qabulxona | Chatda mijozga javob beradi |
+| Qidiruvchi | Kutubxona | `/post` uchun material qidiradi |
+| Yozuvchi | Tahririyat | Post yozadi |
+| Muharrir | Tahririyat | Postni tekshiradi |
+| Rassom | Studiya | Kover chizadi |
+
+Agentni bossangiz — kartochka (to'liq harakat, qachon). 📋 — jurnal paneli,
+pastda — hamma agentning holati. `?demo=1` — soxta jurnal bilan namoyish.
+
+- `ofis.html` — bitta fayl, kutubxonasiz; hamma narsa canvas'da chiziladi
 - `lib/jurnal.js` — agentlar har qadamni yozadi (Redis ro'yxati, oxirgi 200 qator)
-- `api/jurnal.js` — jurnalni markdown qilib beradi (`/jurnal.md`)
+- `api/jurnal.js` — jurnalni markdown qilib beradi (`/jurnal.md`), sahifa uni har 3 soniyada o'qiydi
 
 Jurnal qatori: `- <vaqt> | <agent> | <holat> | <harakat>`, eng yangisi birinchi.
-Egasining izohi va postning to'liq matni jurnalga tushmaydi — sahifa ochiq.
+Mijozning savoli, egasining izohi va postning to'liq matni jurnalga tushmaydi — sahifa ochiq.
 
 ## Redis ulash
 
