@@ -2,7 +2,7 @@
 //
 // Xarakteri — yonidagi yozuvchi.md faylda. Bu yerda faqat unga beriladigan
 // topshiriq matni: nima yozish kerak va qanday material bilan.
-import { ishlat } from './agent.js';
+import { ishlat, materialYoki } from './agent.js';
 import { natijaMatni } from '../lib/vositalar.js';
 
 export const NOM = 'yozuvchi';
@@ -39,6 +39,29 @@ export function qaytaYoz(mavzu, natija, post, sabab, sozlama = {}) {
     'Material o\'sha-o\'sha:',
     '',
     natijaMatni(natija),
+  ].join('\n');
+
+  return ishlat(NOM, topshiriq, sozlama);
+}
+
+// Egasi "Qayta yoz" bosib izoh yozgandan keyingi urinish. Izoh — egasining
+// qarori, muharrir fikridan ustun: aynan o'sha bajariladi.
+export function izohBilanYoz(mavzu, natija, post, izoh, sozlama = {}) {
+  const topshiriq = [
+    `Kanal egasi postni o'qib, qayta yozishni so'radi. Mavzu: "${mavzu}".`,
+    '',
+    'Egasining izohi — shuni albatta bajar:',
+    izoh,
+    '',
+    'Hozirgi post:',
+    post,
+    '',
+    'Izohda aytilganini o\'zgartir, qolgan yaxshi joylarini saqlab qol.',
+    'Izoh materialda yo\'q fakt so\'rasa ham, uni o\'ylab topma.',
+    '',
+    'Material:',
+    '',
+    materialYoki(natija),
   ].join('\n');
 
   return ishlat(NOM, topshiriq, sozlama);
