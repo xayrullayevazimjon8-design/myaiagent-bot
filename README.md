@@ -134,6 +134,12 @@ curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" -H "Content-Type: 
 tugmalari (Chiqar / Qayta yoz / Bekor) bosilganda Telegram botga hech narsa
 yubormaydi va tugmalar "ishlamaydi".
 
+Token'siz yo'l — bot o'zi qo'yadi va holatini ko'rsatadi:
+
+```
+https://myaiagent-bot.vercel.app/api/bot?webhook=tuzat
+```
+
 Holatni ko'rish:
 
 ```bash

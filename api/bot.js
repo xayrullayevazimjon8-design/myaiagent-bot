@@ -11,7 +11,7 @@ import { tarix, saqla, tozala } from '../lib/xotira.js';
 import { qidiruvniBajar } from '../lib/vositalar.js';
 import { materialMatni, postYoz, jarayonMatni } from '../lib/post.js';
 import { kover } from '../lib/kover.js';
-import { sendMessage, sendPhoto, sendTyping } from '../lib/telegram.js';
+import { sendMessage, sendPhoto, sendTyping, webhookniTuzat } from '../lib/telegram.js';
 import {
   IZOH_CHEGARASI, egaId, egami, korsat, tugmaBosildi,
   kutilayotganIzoh, izohniBekorQil, izohBilanQayta,
@@ -183,6 +183,11 @@ export async function readBody(req) {
 export default async function handler(req, res) {
   // Brauzerdan ochilganda bot tirikligini ko'rsatish uchun.
   if (req.method === 'GET') {
+    // ?webhook=tuzat — webhook'ni to'g'ri hodisalar ro'yxati bilan qayta qo'yadi.
+    // Token faqat serverda: brauzerga tokenni yozish shart emas.
+    if (req.query?.webhook === 'tuzat') {
+      return res.status(200).json(await webhookniTuzat());
+    }
     return res.status(200).send('Bot ishlayapti.');
   }
   if (req.method !== 'POST') {

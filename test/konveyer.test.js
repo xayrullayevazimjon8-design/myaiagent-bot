@@ -294,3 +294,19 @@ test('KANAL_ID yo\'q bo\'lsa post chiqmaydi va qoralama yakunlanmaydi', async ()
   await yubor(bos(EGA, 'c:kanalsiz', message));
   assert.equal(turi('copyMessage').length, 1);
 });
+
+test('GET ?webhook=tuzat webhook\'ni callback_query bilan qayta qo\'yadi', async () => {
+  let javob;
+  const res = {
+    status() { return this; },
+    json(j) { javob = j; return this; },
+    send() { return this; },
+  };
+  await handler({ method: 'GET', headers: {}, query: { webhook: 'tuzat' } }, res);
+
+  const qoyish = turi('setWebhook')[0].tana;
+  assert.equal(qoyish.url, 'https://myaiagent-bot.vercel.app/api/bot');
+  assert.ok(qoyish.allowed_updates.includes('callback_query'));
+  assert.equal(turi('getWebhookInfo').length, 1);
+  assert.ok(javob.setWebhook.ok);
+});
