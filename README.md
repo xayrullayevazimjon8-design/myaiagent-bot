@@ -65,6 +65,9 @@ lib/konveyer.js # tugmalar: Chiqar / Qayta yoz / Bekor
 lib/qoralama.js # qoralamalar holati — Redis yoki funksiya xotirasi
 lib/redis.js    # Upstash REST — xotira va qoralama uchun umumiy
 lib/telegram.js # Telegram Bot API chaqiruvlari
+lib/jurnal.js   # agentlar jurnali — ofis sahifasi uchun
+api/jurnal.js   # /jurnal.md
+ofis.html       # agentlar ofisi — /ofis
 test/           # sinovlar — npm test
 agentlar/       # agentlar — har birining xarakteri va funksiyalari
 lib/xarakter.js # system prompt: xarakter + bilim bazasi
@@ -121,13 +124,23 @@ deploy'ga tushadi. Ro'yxatdagi "Needs Attention" yorlig'i aynan shuni eslatadi.
 ## 4. Webhook'ni ulash
 
 ```bash
-curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<domain>/api/bot"
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<domain>/api/bot&allowed_updates=%5B%22message%22,%22edited_message%22,%22callback_query%22%5D"
 ```
 
 Secret ishlatsangiz:
 
 ```bash
-curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" -H "Content-Type: application/json" -d '{"url":"https://<domain>/api/bot","secret_token":"<SECRET>"}'
+curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" -H "Content-Type: application/json" -d '{"url":"https://<domain>/api/bot","secret_token":"<SECRET>","allowed_updates":["message","edited_message","callback_query"]}'
+```
+
+`allowed_updates` da `callback_query` bo'lishi shart — busiz post konveyerining
+tugmalari (Chiqar / Qayta yoz / Bekor) bosilganda Telegram botga hech narsa
+yubormaydi va tugmalar "ishlamaydi".
+
+Token'siz yo'l — bot o'zi qo'yadi va holatini ko'rsatadi:
+
+```
+https://myaiagent-bot.vercel.app/api/bot?webhook=tuzat
 ```
 
 Holatni ko'rish:
@@ -181,6 +194,19 @@ curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
    ID'ingiz — botga `/post` yozsangiz o'zi aytadi) qo'shing → Redeploy.
 3. Redis ulang (quyida).
 
+## Agentlar ofisi
+
+`https://myaiagent-bot.vercel.app/ofis` — yozuvchi, muharrir va rasm agentining
+kartochkalari: holati (kutmoqda / ishlayapti / tugatdi), oxirgi harakati va
+qachon bo'lgani. Sahifa `/jurnal.md` ni har 3 soniyada o'qib o'zi yangilanadi.
+
+- `ofis.html` — bitta fayl, kutubxonasiz
+- `lib/jurnal.js` — agentlar har qadamni yozadi (Redis ro'yxati, oxirgi 200 qator)
+- `api/jurnal.js` — jurnalni markdown qilib beradi (`/jurnal.md`)
+
+Jurnal qatori: `- <vaqt> | <agent> | <holat> | <harakat>`, eng yangisi birinchi.
+Egasining izohi va postning to'liq matni jurnalga tushmaydi — sahifa ochiq.
+
 ## Redis ulash
 
 Suhbat xotirasi ham, post qoralamalari ham Redis'da turadi. Ulanmasa funksiya
@@ -219,7 +245,9 @@ xato berganini ham ko'rasiz.
 | Vercel project | `myaiagent-bot` (team `azimjon4`) |
 | Production | https://myaiagent-bot.vercel.app |
 | Webhook | `https://myaiagent-bot.vercel.app/api/bot` |
-| Ishlayotgan AI | Claude (`AI_PROVIDER=claude`) |
+| Ishlayotgan AI | Claude Opus 5.5 (`AI_PROVIDER=claude`) |
+| Post kanali | `KANAL_ID=-1004466207258`, egasi `EGA_ID` |
+| Redis | Upstash — suhbat xotirasi va post qoralamalari |
 
 Claude hisobiga kredit qo'shilgan va bot shu asosda ishlaydi. Gemini zaxira sifatida
 qoladi (bepul, lekin kuniga 20 so'rov). OpenAI'da kredit yo'q.

@@ -294,3 +294,61 @@ test('KANAL_ID yo\'q bo\'lsa post chiqmaydi va qoralama yakunlanmaydi', async ()
   await yubor(bos(EGA, 'c:kanalsiz', message));
   assert.equal(turi('copyMessage').length, 1);
 });
+
+test('GET ?webhook=tuzat webhook\'ni callback_query bilan qayta qo\'yadi', async () => {
+  let javob;
+  const res = {
+    status() { return this; },
+    json(j) { javob = j; return this; },
+    send() { return this; },
+  };
+  await handler({ method: 'GET', headers: {}, query: { webhook: 'tuzat' } }, res);
+
+  const qoyish = turi('setWebhook')[0].tana;
+  assert.equal(qoyish.url, 'https://myaiagent-bot.vercel.app/api/bot');
+  assert.ok(qoyish.allowed_updates.includes('callback_query'));
+  assert.equal(turi('getWebhookInfo').length, 1);
+  assert.ok(javob.setWebhook.ok);
+});
+
+test('jurnal: /post har agentni kutmoqda → ishlayapti → tugatdi qiladi, /jurnal.md markdown beradi', async () => {
+  const jurnal = await import('../lib/jurnal.js');
+  const { default: jurnalHandler } = await import('../api/jurnal.js');
+
+  await yubor(xabar(EGA, '/post jurnal sinovi'));
+
+  // Oldingi sinovlar ham jurnalga yozgan — shu /post boshlangan joydan olamiz.
+  const qatorlar = (await jurnal.qatorlar()).slice().reverse().map((q) => q.slice(2).split(' | '));
+  const boshi = qatorlar.findIndex(([, a, , h]) => a === 'yozuvchi' && h === 'Navbatda: jurnal sinovi');
+  const songgi = qatorlar.slice(boshi);
+  const holatlari = (agent) => songgi.filter(([, a]) => a === agent).map(([, , h]) => h);
+
+  for (const agent of ['yozuvchi', 'muharrir', 'rasm']) {
+    const h = holatlari(agent);
+    assert.equal(h[0], 'kutmoqda', `${agent} navbatdan boshlanadi`);
+    assert.equal(h.at(-1), 'tugatdi', `${agent} tugatdi bilan tugaydi`);
+    assert.ok(h.includes('ishlayapti'));
+  }
+  const rasmOxirgi = songgi.filter(([, a]) => a === 'rasm').at(-1);
+  assert.match(rasmOxirgi[3], /^Kover tayyor: ochirilgan/);
+
+  let tana = '';
+  const sarlavhalar = {};
+  const res = {
+    setHeader(k, v) { sarlavhalar[k] = v; },
+    status() { return this; },
+    send(t) { tana = t; return this; },
+  };
+  await jurnalHandler({ method: 'GET' }, res);
+  assert.match(sarlavhalar['Content-Type'], /text\/markdown/);
+  assert.equal(sarlavhalar['Cache-Control'], 'no-store');
+  assert.match(tana, /^# Agentlar jurnali/);
+  assert.match(tana, /\n- \S+ \| rasm \| tugatdi \| Kover tayyor/);
+});
+
+test('jurnal: harakat qisqartiriladi va | belgisi qatorni buzmaydi', async () => {
+  const { qatorYasa } = await import('../lib/jurnal.js');
+  const q = qatorYasa('yozuvchi', 'ishlayapti', `a | b\n${'x'.repeat(300)}`, new Date('2026-01-01T00:00:00Z'));
+  assert.equal(q.split(' | ').length, 4);
+  assert.ok(q.length < 200);
+});

@@ -173,8 +173,8 @@ to'g'ri keladi.
 
 | Masala | Holat |
 |---|---|
-| Sinovlar repoda yo'q | Vaqtinchalik fayllarda qolgan |
-| Upstash Redis ulanmagan | Xotira funksiya nusxasida — uzoq tanaffusdan keyin yo'qolishi mumkin |
+| ~~Sinovlar repoda yo'q~~ | 13-bosqichda `test/` qo'shildi — `npm test` |
+| ~~Upstash Redis ulanmagan~~ | 2026-09-24 da ulandi |
 | Bilim bazasi to'ldirilmagan | `bilim/` da `<!-- NAMUNA — to'ldiring -->` belgilari bor |
 | Bilim bazasi promptda ham, vositada ham | Har so'rovda promptga to'liq qo'shiladi (~3300 token) — qidiruv bo'lgach ortiqcha |
 | Kalitlar suhbat tarixida | Tavily kaliti chatda yozilgan — almashtirish tavsiya etiladi |

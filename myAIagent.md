@@ -7,7 +7,7 @@ Botning nomi **Jarvis** — Prestigious (sayt yaratish) biznesining assistenti.
 Mijozdan sohasini so'rab, bir necha savol berib, mos ta'rifni taklif qiladi.
 Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
 
-**Sana:** 2026-09-15
+**Sana:** 2026-09-24
 **Bot:** [@myAIagent_25_bot](https://t.me/myAIagent_25_bot)
 **Repo:** `xayrullayevazimjon8-design/myaiagent-bot` (public)
 **Production:** https://myaiagent-bot.vercel.app/api/bot
@@ -18,7 +18,7 @@ Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
 
 | | |
 |---|---|
-| Ishlayotgan model | `gemini-3.8-flash` |
+| Ishlayotgan model | `claude-opus-5-5` (effort `low`) |
 | System prompt hajmi | ~15 000 belgi (~5700 token) + vosita e'loni |
 | Javob tezligi | 4–6 s (o'rtacha 4.8 s) |
 | Kirish nuqtasi | `api/bot.js` |
@@ -27,7 +27,7 @@ Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
 | Xarakter | `xarakter.md` — Jarvis |
 | Bilim bazasi | `bilim/` — 4 fayl, ~5000 belgi |
 | Provayderlar | Gemini (joriy), Claude, OpenAI — `AI_PROVIDER` bilan almashtiriladi |
-| Suhbat xotirasi | Oxirgi 10 juftlik, 30 daqiqa — `lib/xotira.js` |
+| Suhbat xotirasi | Oxirgi 10 juftlik, 30 daqiqa — `lib/xotira.js`, Upstash Redis'da |
 | Vositalar | `qidiruv` (bilim bazasi + internet), `kover` (rasm) |
 | Agentlar | `yozuvchi`, `muharrir` — `agentlar/` papkasida |
 | Post konveyeri | Chiqar / Qayta yoz / Bekor — `lib/konveyer.js` |
@@ -625,6 +625,16 @@ eski tarix yaroqsiz bo'lib qolardi.
 model uni suhbatning bir qismi deb qabul qiladi va keyingi javoblarida o'shanga
 tayanadi. Shuning uchun tarix faqat muvaffaqiyatli javobdan keyin yangilanadi.
 
+### Tugmalar ishlamasa — webhook callback_query ni o'tkazmayapti
+
+13-bosqich deploy qilingach, `/post` ishladi, lekin tugmalar bosilganda Vercel
+logida birorta so'rov ham ko'rinmadi. Kod aybdor emas edi: webhook avval
+`allowed_updates` bilan faqat xabarlar uchun o'rnatilgan, Telegram
+`callback_query` ni umuman yubormagan. `setWebhook` ga `callback_query` ni
+qo'shish kifoya.
+
+Belgisi: tugma bosiladi, soat belgisi aylanadi, logda esa hech narsa yo'q.
+
 ### Bilim bazasi har so'rovda qayta yuboriladi
 
 System prompt 160 tokendan ~3300 tokenga o'sdi — butun baza har savolda uzatiladi.
@@ -659,7 +669,7 @@ mijozga aytilgan noto'g'ri va'da.
 ### Webhook
 
 ```bash
-curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://myaiagent-bot.vercel.app/api/bot"
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://myaiagent-bot.vercel.app/api/bot&allowed_updates=%5B%22message%22,%22edited_message%22,%22callback_query%22%5D"
 ```
 
 ```bash
@@ -683,7 +693,7 @@ chaqirilgan tashqi API'larni ko'rish mumkin — nosozlik qidirishda eng foydali 
 | OpenAI | Hisobda kredit yo'q, kalit Vercel'ga qo'shilmagan. Kod tayyor |
 | Bilim bazasi to'ldirilmagan | `bilim/` fayllarida `<!-- NAMUNA — to'ldiring -->` belgilari bor. Narxlar haqiqiy ($200/$500/$1000), qolgani namuna — bot ularni ishonch bilan aytadi |
 | Ta'rif tafsilotlari | Har bir ta'rifga nima kirishi aniqlanmagan, egasi keyinroq beradi |
-| Suhbat xotirasi | Bor (9-bosqich), lekin Redis ulanmagan — hozir funksiya xotirasida, ya'ni suhbat o'rtasida yo'qolishi mumkin |
+| ~~Suhbat xotirasi~~ | Upstash Redis ulandi (13-bosqich) — xotira va qoralamalar Redis'da |
 | ~~`TAVILY_API_KEY`~~ | Qo'yildi va ishlayapti — production logida `internet ok 5` |
 | Bilim bazasi promptda ham, vositada ham | Baza har so'rovda promptga to'liq qo'shiladi (~3300 token). Qidiruv vositasi bo'lgach bu ortiqcha — bazani promptdan olib tashlash mumkin |
 | `TELEGRAM_WEBHOOK_SECRET` | Kod tayyor, yoqilmagan |

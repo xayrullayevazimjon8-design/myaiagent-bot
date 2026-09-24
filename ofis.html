@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentlar ofisi</title>
+<!--
+  Agentlar ofisi — jurnal.md ni o'qib, har agentning holatini ko'rsatadi.
+  Bitta fayl, kutubxonasiz. Jurnal manzili: ?jurnal=<url> (standart: jurnal.md).
+  Jurnal qatori: "- <ISO vaqt> | <agent> | <holat> | <harakat>", eng yangisi birinchi.
+-->
+<style>
+  :root {
+    --fon: #f4f1ea;
+    --pol: #e8e2d4;
+    --pol-chiziq: #ddd5c3;
+    --karta: #fffdf8;
+    --matn: #2b2a27;
+    --xira: #77736a;
+    --chegara: #d9d2c2;
+    --kutmoqda: #8a8577;
+    --kutmoqda-fon: #ece8de;
+    --ishlayapti: #b86a00;
+    --ishlayapti-fon: #fff1d6;
+    --tugatdi: #2f7d4f;
+    --tugatdi-fon: #e1f3e7;
+    --xato: #b3261e;
+    --soya: 0 1px 2px rgb(0 0 0 / .06), 0 4px 14px rgb(0 0 0 / .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fon: #1b1a18;
+      --pol: #23211e;
+      --pol-chiziq: #2c2a26;
+      --karta: #2a2825;
+      --matn: #ece8df;
+      --xira: #a29d92;
+      --chegara: #3a3732;
+      --kutmoqda: #aaa497;
+      --kutmoqda-fon: #34322d;
+      --ishlayapti: #f0a640;
+      --ishlayapti-fon: #3d2f18;
+      --tugatdi: #6cc88f;
+      --tugatdi-fon: #1d3326;
+      --xato: #f08a80;
+      --soya: 0 1px 2px rgb(0 0 0 / .3), 0 4px 14px rgb(0 0 0 / .25);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fon);
+    color: var(--matn);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 40px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+  h1 { font-size: 22px; margin: 0; }
+  .aloqa { font-size: 13px; color: var(--xira); display: flex; align-items: center; gap: 6px; }
+  .aloqa i { width: 8px; height: 8px; border-radius: 50%; background: var(--kutmoqda); display: inline-block; }
+  .aloqa.ok i { background: var(--tugatdi); }
+  .aloqa.xato i { background: var(--xato); }
+
+  /* Ofis poli: kafel naqshi — 2D xona tuyg'usi uchun */
+  .ofis {
+    margin-top: 18px;
+    padding: 22px;
+    border-radius: 14px;
+    border: 1px solid var(--chegara);
+    background-color: var(--pol);
+    background-image:
+      linear-gradient(var(--pol-chiziq) 1px, transparent 1px),
+      linear-gradient(90deg, var(--pol-chiziq) 1px, transparent 1px);
+    background-size: 40px 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+  }
+
+  .stol {
+    background: var(--karta);
+    border: 1px solid var(--chegara);
+    border-radius: 12px;
+    box-shadow: var(--soya);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 190px;
+  }
+  .stol-bosh { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 52px; height: 52px; border-radius: 12px;
+    display: grid; place-items: center;
+    font-size: 28px;
+    background: var(--kutmoqda-fon);
+    flex-shrink: 0;
+  }
+  .stol[data-holat="ishlayapti"] .avatar { background: var(--ishlayapti-fon); animation: tebranish 1.2s ease-in-out infinite; }
+  .stol[data-holat="tugatdi"] .avatar { background: var(--tugatdi-fon); }
+  @keyframes tebranish { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  @media (prefers-reduced-motion: reduce) { .stol .avatar { animation: none !important; } }
+
+  .ism { font-weight: 650; font-size: 17px; text-transform: capitalize; }
+  .vazifa { color: var(--xira); font-size: 13px; }
+
+  .holat {
+    align-self: flex-start;
+    font-size: 13px; font-weight: 600;
+    padding: 3px 10px; border-radius: 999px;
+    color: var(--kutmoqda); background: var(--kutmoqda-fon);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .holat::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .stol[data-holat="ishlayapti"] .holat { color: var(--ishlayapti); background: var(--ishlayapti-fon); }
+  .stol[data-holat="ishlayapti"] .holat::before { animation: miltillash 1s ease-in-out infinite; }
+  .stol[data-holat="tugatdi"] .holat { color: var(--tugatdi); background: var(--tugatdi-fon); }
+  @keyframes miltillash { 50% { opacity: .25; } }
+
+  .harakat { margin: 0; overflow-wrap: anywhere; }
+  .harakat.xato { color: var(--xato); }
+  .vaqt { margin-top: auto; font-size: 12px; color: var(--xira); }
+  .ogohlantirish { color: var(--xato); }
+
+  h2 { font-size: 15px; margin: 28px 0 8px; color: var(--xira); font-weight: 600; }
+  .tasma { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--chegara); }
+  .tasma li {
+    display: grid; grid-template-columns: 56px 150px 1fr; gap: 10px;
+    padding: 7px 2px; border-bottom: 1px solid var(--chegara); font-size: 13px;
+  }
+  .tasma .t { color: var(--xira); font-variant-numeric: tabular-nums; }
+  .tasma .a { font-weight: 600; text-transform: capitalize; }
+  .tasma .h { overflow-wrap: anywhere; }
+  .bosh-xabar { color: var(--xira); font-size: 14px; padding: 10px 2px; }
+
+  @media (max-width: 520px) {
+    .tasma li { grid-template-columns: 56px 1fr; }
+    .tasma .h { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>🏢 Agentlar ofisi</h1>
+    <div class="aloqa" id="aloqa"><i></i><span>ulanmoqda…</span></div>
+  </header>
+
+  <section class="ofis" id="ofis" aria-live="polite"></section>
+
+  <h2>Oxirgi harakatlar</h2>
+  <ul class="tasma" id="tasma"><li class="bosh-xabar">Jurnal hali bo'sh.</li></ul>
+</main>
+
+<script>
+  // Jurnalni qancha tez-tez o'qish.
+  const YANGILASH_MS = 3000;
+
+  // "ishlayapti" holati shundan uzoq tursa — agent javob bermay qolgan bo'lishi
+  // mumkin (masalan, funksiya vaqt chegarasida to'xtatilgan).
+  const QOTISH_MS = 3 * 60 * 1000;
+
+  const AGENTLAR = [
+    { nom: 'yozuvchi', avatar: '✍️', vazifa: 'Post yozadi' },
+    { nom: 'muharrir', avatar: '🧐', vazifa: 'Postni tekshiradi' },
+    { nom: 'rasm',     avatar: '🎨', vazifa: 'Kover chizadi' },
+  ];
+
+  const manzil = new URLSearchParams(location.search).get('jurnal') || 'jurnal.md';
+
+  // "- 2026-09-24T19:02:28.123Z | yozuvchi | ishlayapti | Qoralama yozmoqda"
+  function tahlil(matn) {
+    return matn.split('\n')
+      .filter((q) => q.startsWith('- '))
+      .map((q) => {
+        const [vaqt, agent, holat, ...qolgan] = q.slice(2).split(' | ');
+        return { vaqt: new Date(vaqt), agent: agent?.trim(), holat: holat?.trim(), harakat: qolgan.join(' | ').trim() };
+      })
+      .filter((y) => y.agent && !isNaN(y.vaqt));
+  }
+
+  function qanchaOldin(vaqt) {
+    const s = Math.max(0, Math.round((Date.now() - vaqt) / 1000));
+    if (s < 60) return `${s} soniya oldin`;
+    if (s < 3600) return `${Math.floor(s / 60)} daqiqa oldin`;
+    if (s < 86400) return `${Math.floor(s / 3600)} soat oldin`;
+    return vaqt.toLocaleString('uz-UZ');
+  }
+
+  const soat = (vaqt) => vaqt.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+
+  function element(teg, sinf, matn) {
+    const el = document.createElement(teg);
+    if (sinf) el.className = sinf;
+    if (matn != null) el.textContent = matn;
+    return el;
+  }
+
+  function stolYasa(agent, oxirgi) {
+    const stol = element('article', 'stol');
+    stol.dataset.holat = oxirgi?.holat ?? 'kutmoqda';
+
+    const bosh = element('div', 'stol-bosh');
+    bosh.append(element('div', 'avatar', agent.avatar));
+    const ism = element('div');
+    ism.append(element('div', 'ism', agent.nom), element('div', 'vazifa', agent.vazifa));
+    bosh.append(ism);
+
+    const harakat = oxirgi?.harakat ?? 'Hali ish bo\'lmagan';
+    const xatomi = /^Xato:/.test(harakat);
+
+    const vaqt = element('div', 'vaqt', oxirgi ? qanchaOldin(oxirgi.vaqt) : '');
+    if (oxirgi?.holat === 'ishlayapti' && Date.now() - oxirgi.vaqt > QOTISH_MS) {
+      vaqt.append(element('span', 'ogohlantirish', ' · uzoq vaqtdan beri javob yo\'q'));
+    }
+
+    stol.append(bosh, element('span', 'holat', stol.dataset.holat), element('p', xatomi ? 'harakat xato' : 'harakat', harakat), vaqt);
+    return stol;
+  }
+
+  function chiz(yozuvlar) {
+    // Jurnal eng yangisidan boshlanadi — har agentning birinchi uchragan qatori oxirgisi.
+    const oxirgi = {};
+    for (const y of yozuvlar) if (!oxirgi[y.agent]) oxirgi[y.agent] = y;
+
+    document.getElementById('ofis').replaceChildren(...AGENTLAR.map((a) => stolYasa(a, oxirgi[a.nom])));
+
+    const tasma = document.getElementById('tasma');
+    if (yozuvlar.length === 0) {
+      tasma.replaceChildren(element('li', 'bosh-xabar', 'Jurnal hali bo\'sh. Botga /post yozing.'));
+      return;
+    }
+    tasma.replaceChildren(...yozuvlar.slice(0, 12).map((y) => {
+      const li = element('li');
+      li.append(element('span', 't', soat(y.vaqt)), element('span', 'a', `${y.agent} · ${y.holat}`), element('span', 'h', y.harakat));
+      return li;
+    }));
+  }
+
+  function aloqa(holat, matn) {
+    const el = document.getElementById('aloqa');
+    el.className = `aloqa ${holat}`;
+    el.querySelector('span').textContent = matn;
+  }
+
+  let oxirgiYozuvlar = [];
+
+  async function yangila() {
+    try {
+      const javob = await fetch(manzil, { cache: 'no-store' });
+      if (!javob.ok) throw new Error(`HTTP ${javob.status}`);
+      oxirgiYozuvlar = tahlil(await javob.text());
+      aloqa('ok', `jonli · ${soat(new Date())}`);
+    } catch (err) {
+      aloqa('xato', location.protocol === 'file:'
+        ? 'faylni to\'g\'ridan-to\'g\'ri ochib bo\'lmaydi — /ofis manzilidan oching'
+        : `jurnal o'qilmadi (${err.message}), qayta urinyapman`);
+    }
+    // Ulanish uzilsa ham "N daqiqa oldin" yangilanib tursin.
+    chiz(oxirgiYozuvlar);
+  }
+
+  yangila();
+  setInterval(yangila, YANGILASH_MS);
+</script>
+</body>
+</html>

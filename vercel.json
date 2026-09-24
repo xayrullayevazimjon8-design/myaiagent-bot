@@ -4,5 +4,9 @@
       "maxDuration": 60,
       "includeFiles": "{xarakter.md,bilim/**,agentlar/**}"
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/jurnal.md", "destination": "/api/jurnal" },
+    { "source": "/ofis", "destination": "/ofis.html" }
+  ]
 }
