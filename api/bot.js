@@ -210,10 +210,11 @@ export default async function handler(req, res) {
   try {
     const update = await readBody(req);
 
-    // Tugma bosildi. Tez ish (Qayta yoz faqat izoh so'raydi), shuning uchun
-    // shu yerning o'zida bajaramiz.
+    // Tugma bosildi. "Yangi rasm" rasm chizishni kutadi (~15 s), shuning uchun
+    // javobdan keyinga qoldiramiz — Telegram kutib qolib, qayta yubormasin.
     if (update.callback_query) {
-      await tugmaBosildi(update.callback_query);
+      waitUntil(tugmaBosildi(update.callback_query)
+        .catch((err) => console.error('Tugma ishlanmadi:', err)));
       return res.status(200).json({ ok: true });
     }
 
