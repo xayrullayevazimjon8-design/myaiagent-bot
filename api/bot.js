@@ -103,7 +103,9 @@ async function replyWithAi(chatId, text) {
 
       // Vosita rasm yasasa, u shu ro'yxatga tushadi va javob bilan yuboriladi.
       const ilovalar = [];
-      const answer = await ask(text, oldingi, { ilovalar });
+      // Jurnalga savolning o'zi emas, faqat fakt yoziladi — ofis sahifasi ochiq.
+      const answer = await jurnal.kuzat('jarvis', 'Mijozga javob yozmoqda',
+        () => ask(text, oldingi, { ilovalar }), () => 'Javob berdi');
 
       await javobYubor(chatId, answer, ilovalar);
 
@@ -125,9 +127,11 @@ async function postJavobi(chatId, mavzu) {
   try {
     await yozmoqda(chatId, async () => {
       // Ofis sahifasida hamma agent navbatga turadi.
-      for (const agent of jurnal.AGENTLAR) await jurnal.yoz(agent, 'kutmoqda', `Navbatda: ${mavzu}`);
+      for (const agent of jurnal.POST_AGENTLARI) await jurnal.yoz(agent, 'kutmoqda', `Navbatda: ${mavzu}`);
 
-      const natija = await qidiruvniBajar({ sorov: mavzu, manba: 'hammasi' });
+      const natija = await jurnal.kuzat('qidiruvchi', `Material qidirmoqda: ${mavzu}`,
+        () => qidiruvniBajar({ sorov: mavzu, manba: 'hammasi' }),
+        (n) => `Topdi: bilim bazasidan ${n.bilim.length}, internetdan ${n.internet.natijalar.length}`);
       await sendLong(chatId, materialMatni(natija));
 
       const yakun = await postYoz(mavzu, natija);
