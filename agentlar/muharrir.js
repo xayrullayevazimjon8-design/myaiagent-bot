@@ -2,8 +2,7 @@
 //
 // Xarakteri va tekshirish mezonlari — yonidagi muharrir.md faylda. Bu yerda
 // topshiriq matni va hukmni o'qish.
-import { ishlat } from './agent.js';
-import { natijaMatni } from '../lib/vositalar.js';
+import { ishlat, materialYoki } from './agent.js';
 
 export const NOM = 'muharrir';
 
@@ -46,7 +45,7 @@ export async function tekshir(mavzu, natija, post, sozlama = {}) {
     '',
     'Post shu materialdan yozilgan. Undagi har bir fakt shu yerda bormi — tekshir:',
     '',
-    natijaMatni(natija),
+    materialYoki(natija),
   ].join('\n');
 
   return hukmniOqi(await ishlat(NOM, topshiriq, sozlama));

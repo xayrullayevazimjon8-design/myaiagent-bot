@@ -2,7 +2,12 @@
 
 Webhook orqali ishlaydigan Telegram bot. Vercel'da serverless funksiya sifatida turadi.
 
-**Joriy bosqich: 12 — kover rasm.** `/post` endi rasm bilan chiqadi: rasm API
+**Joriy bosqich: 13 — post konveyeri.** `/post` natijasi egasiga
+**Chiqar / Qayta yoz / Bekor** tugmalari bilan keladi. "Chiqar" postni kanalga
+chiqaradi, "Qayta yoz" egasining izohi bilan yozuvchini qayta ishlatadi.
+Batafsil — quyidagi "Post konveyeri" bo'limida.
+
+**12-bosqich — kover rasm.** `/post` rasm bilan chiqadi: rasm API
 ishlasa undan, ishlamasa shablon koverdan.
 
 **11-bosqich — ikki agent.** `/post` da yozuvchi post yozadi, muharrir
@@ -56,6 +61,11 @@ lib/kover.js           # kover vositasi: API, yiqilsa shablon
 lib/kover-api.js       # rasm generatsiyasi (Gemini rasm modeli)
 lib/kover-shablon.js   # PNG yasovchi — tashqi kutubxonasiz
 lib/post.js     # /post oqimi: qidiruv, agentlar, natija
+lib/konveyer.js # tugmalar: Chiqar / Qayta yoz / Bekor
+lib/qoralama.js # qoralamalar holati — Redis yoki funksiya xotirasi
+lib/redis.js    # Upstash REST — xotira va qoralama uchun umumiy
+lib/telegram.js # Telegram Bot API chaqiruvlari
+test/           # sinovlar — npm test
 agentlar/       # agentlar — har birining xarakteri va funksiyalari
 lib/xarakter.js # system prompt: xarakter + bilim bazasi
 lib/bilim.js    # bilim/ papkasini o'qiydi
@@ -134,12 +144,62 @@ curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
 - `POST /api/bot` → Telegram update'i
 - `/start`, `/tozala`, `/help` — tayyor javoblar, AI chaqirilmaydi
   (`/start` va `/tozala` suhbat xotirasini ham tozalaydi)
-- `/post [mavzu]` — qidiruv vositasini ishga tushiradi, topilgan materialni
-  ko'rsatadi va shu asosda post yozadi
+- `/post [mavzu]` — faqat kanal egasi (`EGA_ID`) uchun: material qidiradi,
+  post yozadi va tugmalar bilan egasiga yuboradi (quyida "Post konveyeri")
 - Boshqa matn → AI javob beradi, uzun javob bo'laklarga bo'linadi (limit 4096 belgi)
 - Rasm, stiker va boshqalar → "Hozircha faqat matnli xabarlarni tushunaman."
 - Handler **har doim `200`** qaytaradi: xato bo'lsa ham. Aks holda Telegram
   o'sha xabarni qayta-qayta yuboraveradi.
+
+## Post konveyeri
+
+```
+/post mavzu → qidiruv → yozuvchi → muharrir → kover
+           → egasiga: post + [✅ Chiqar] [✏️ Qayta yoz] [❌ Bekor]
+```
+
+| Tugma | Nima bo'ladi |
+|---|---|
+| ✅ Chiqar | Tugmalar olinadi, post `KANAL_ID` ga nusxalanadi (`copyMessage`) — egasi ko'rgan narsaning aynan o'zi chiqadi |
+| ✏️ Qayta yoz | Bot izoh so'raydi. Egasining keyingi xabari izoh bo'ladi: yozuvchi shuni bajaradi, muharrir bir marta tekshiradi (fikrini aytadi, qaytarmaydi), yangi variant yana tugmalar bilan keladi. Kover o'sha-o'sha |
+| ❌ Bekor | Qoralama o'chiriladi |
+
+- `/post` va tugmalar faqat `EGA_ID` ga ishlaydi. `EGA_ID` qo'yilmagan bo'lsa
+  `/post` o'chiq turadi va yozgan odamga uning ID sini aytadi.
+- Izoh kutilayotganda istalgan buyruq (`/help` va h.k.) kutishni bekor qiladi.
+- Har qoralama bir marta yakunlanadi: tugma ikki marta bosilsa ham post kanalga
+  ikki marta chiqmaydi.
+- Kanalga chiqmasa (bot admin emas, `KANAL_ID` noto'g'ri) sababi egasiga
+  yoziladi va tugmalar qaytadi.
+- Qoralama 24 soat saqlanadi (Redis). Redis yo'q yoki qoralama yo'qolgan bo'lsa
+  ham tugmalar ishlaydi — post Telegram xabarining o'zidan olinadi, faqat
+  "Qayta yoz" qidiruv materialisiz ishlaydi.
+
+**Sozlash:**
+1. Botni kanalga admin qiling ("xabar yuborish" huquqi bilan).
+2. Vercel'ga `KANAL_ID` (`@kanal_nomi` yoki `-100...`) va `EGA_ID` (Telegram
+   ID'ingiz — botga `/post` yozsangiz o'zi aytadi) qo'shing → Redeploy.
+3. Redis ulang (quyida).
+
+## Redis ulash
+
+Suhbat xotirasi ham, post qoralamalari ham Redis'da turadi. Ulanmasa funksiya
+xotirasida — Vercel nusxani almashtirsa yo'qoladi.
+
+Vercel → Project → **Storage** → **Create Database** → **Upstash for Redis**
+(Marketplace, bepul tarif yetadi) → loyihaga ulang. Vercel `KV_REST_API_URL` va
+`KV_REST_API_TOKEN` ni o'zi qo'shadi → **Redeploy**. Kod o'zgartirish kerak emas.
+
+Tekshirish: Vercel Logs'da birinchi xabardan keyin `suhbat xotirasi: redis`.
+
+## Sinovlar
+
+```bash
+npm install
+npm test
+```
+
+Telegram va AI soxtalashtiriladi — kalit ham, tarmoq ham kerak emas.
 
 ## Xato matnlari
 

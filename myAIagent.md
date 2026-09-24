@@ -30,6 +30,7 @@ Biznes haqidagi faktlarni faqat `bilim/` papkasidan oladi.
 | Suhbat xotirasi | Oxirgi 10 juftlik, 30 daqiqa — `lib/xotira.js` |
 | Vositalar | `qidiruv` (bilim bazasi + internet), `kover` (rasm) |
 | Agentlar | `yozuvchi`, `muharrir` — `agentlar/` papkasida |
+| Post konveyeri | Chiqar / Qayta yoz / Bekor — `lib/konveyer.js` |
 
 ### Fayl tuzilishi
 
@@ -47,6 +48,11 @@ lib/kover.js           # kover vositasi: API, yiqilsa shablon
 lib/kover-api.js       # rasm generatsiyasi (Gemini rasm modeli)
 lib/kover-shablon.js   # PNG yasovchi — kutubxonasiz
 lib/post.js     # /post oqimi: qidiruv, agentlar, natija
+lib/konveyer.js # tugmalar: Chiqar / Qayta yoz / Bekor
+lib/qoralama.js # qoralamalar holati
+lib/redis.js    # Upstash REST — umumiy
+lib/telegram.js # Telegram Bot API
+test/           # sinovlar — npm test
 agentlar/       # agentlar — har birining xarakteri (.md) va funksiyalari (.js)
   agent.js         # umumiy qism: xarakter faylini o'qish va ishga tushirish
   yozuvchi.md/.js  # post yozuvchi
@@ -81,6 +87,8 @@ Yangi provayder qo'shish uchun shu ikki funksiyani yozib, `lib/ai.js` dagi
 | `RASM_API_KEY` | Kover uchun kalit — yo'q bo'lsa `GEMINI_API_KEY` |
 | `RASM_MODEL` | Rasm modeli (standart `gemini-3.1-flash-image`) |
 | `KOVER` | `off` bo'lsa kover yasalmaydi |
+| `EGA_ID` | Kanal egasining Telegram ID si — `/post` va tugmalar faqat unga |
+| `KANAL_ID` | Post chiqadigan kanal (`@nom` yoki `-100...`) |
 | `TELEGRAM_WEBHOOK_SECRET` | Ixtiyoriy himoya |
 
 ---
@@ -243,6 +251,23 @@ va foydalanuvchi xato ko'rmaydi.
 Shablon kover `lib/kover-shablon.js` da noldan yig'iladi: `node:zlib` ustida PNG
 (IHDR/IDAT/IEND, CRC32) va ichki 5×7 nuqtali shrift. 1280×720, fon rangi
 mavzudan hisoblanadi, pastida "Prestigious".
+
+### 13-bosqich — post konveyeri
+
+`/post` natijasi endi to'g'ridan-to'g'ri chiqmaydi: egasiga **Chiqar / Qayta
+yoz / Bekor** tugmalari bilan keladi. "Chiqar" postni `copyMessage` bilan
+kanalga nusxalaydi — egasi ko'rgan xabarning aynan o'zi, rasm qayta
+yuklanmaydi. "Qayta yoz" egasining keyingi xabarini izoh qilib oladi: yozuvchi
+uni bajaradi, muharrir bir marta tekshirib fikrini aytadi, lekin qaytarmaydi.
+
+Konveyer bir nechta webhook chaqiruviga bo'lingan, shuning uchun holat
+(`lib/qoralama.js`) Redis'da turadi. Qoralama yo'qolsa ham tugmalar ishlaydi —
+post Telegram xabarining o'zidan tiklanadi. Tugma ikki marta bosilishidan
+`SET NX` qulfi himoya qiladi.
+
+`/post` faqat `EGA_ID` ga ochildi — oldin uni har kim ishlata olardi va har
+chaqiruv AI puli edi. Loyihaga birinchi marta repoda saqlanadigan sinovlar
+qo'shildi (`npm test`).
 
 ---
 

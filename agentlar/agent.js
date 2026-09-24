@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ask } from '../lib/ai.js';
+import { natijaMatni } from '../lib/vositalar.js';
 
 // ESM'da __dirname yo'q — yo'lni import.meta.url dan olamiz.
 // Xarakter fayllari shu papkaning o'zida: agentlar/<nom>.md
@@ -58,4 +59,12 @@ export function ishlat(nom, topshiriq, sozlama = {}) {
     vositasiz: true,
     ...sozlama,
   });
+}
+
+// Qoralama saqlanmay qolgan bo'lsa material ham yo'q — buni ochiq aytamiz,
+// aks holda yozuvchi bo'sh joyni o'zi to'ldirishga urinadi.
+export function materialYoki(natija) {
+  return natija
+    ? natijaMatni(natija)
+    : 'Material saqlanmagan. Faqat postdagi faktlarni ishlat, yangisini qo\'shma.';
 }
