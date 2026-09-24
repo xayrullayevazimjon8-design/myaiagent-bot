@@ -219,7 +219,9 @@ xato berganini ham ko'rasiz.
 | Vercel project | `myaiagent-bot` (team `azimjon4`) |
 | Production | https://myaiagent-bot.vercel.app |
 | Webhook | `https://myaiagent-bot.vercel.app/api/bot` |
-| Ishlayotgan AI | Claude (`AI_PROVIDER=claude`) |
+| Ishlayotgan AI | Claude Opus 5.5 (`AI_PROVIDER=claude`) |
+| Post kanali | `KANAL_ID=-1004466207258`, egasi `EGA_ID` |
+| Redis | Upstash — suhbat xotirasi va post qoralamalari |
 
 Claude hisobiga kredit qo'shilgan va bot shu asosda ishlaydi. Gemini zaxira sifatida
 qoladi (bepul, lekin kuniga 20 so'rov). OpenAI'da kredit yo'q.
