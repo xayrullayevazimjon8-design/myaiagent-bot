@@ -168,13 +168,14 @@ curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
 
 ```
 /post mavzu → qidiruv → yozuvchi → muharrir → kover
-           → egasiga: post + [✅ Chiqar] [✏️ Qayta yoz] [❌ Bekor]
+           → egasiga: post + [✅ Chiqar] [✏️ Qayta yoz] [🎨 Yangi rasm] [❌ Bekor]
 ```
 
 | Tugma | Nima bo'ladi |
 |---|---|
 | ✅ Chiqar | Tugmalar olinadi, post `KANAL_ID` ga nusxalanadi (`copyMessage`) — egasi ko'rgan narsaning aynan o'zi chiqadi |
-| ✏️ Qayta yoz | Bot izoh so'raydi. Egasining keyingi xabari izoh bo'ladi: yozuvchi shuni bajaradi, muharrir bir marta tekshiradi (fikrini aytadi, qaytarmaydi), yangi variant yana tugmalar bilan keladi. Kover o'sha-o'sha |
+| ✏️ Qayta yoz | Bot izoh so'raydi. Egasining keyingi xabari izoh bo'ladi: yozuvchi shuni bajaradi, muharrir bir marta tekshiradi (fikrini aytadi, qaytarmaydi), yangi variant yana tugmalar bilan keladi. Izohda "rasm", "kover", "surat" yoki "muqova" bo'lsa kover ham izoh bilan qayta chiziladi, aks holda o'sha qoladi |
+| 🎨 Yangi rasm | Matn o'sha, kover qayta chiziladi. Rasm API ishlamasa bot aytadi — shablon kover har safar bir xil chiqadi |
 | ❌ Bekor | Qoralama o'chiriladi |
 
 - `/post` va tugmalar faqat `EGA_ID` ga ishlaydi. `EGA_ID` qo'yilmagan bo'lsa

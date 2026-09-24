@@ -39,6 +39,21 @@ mock.module('../lib/claude.js', {
   },
 });
 
+// Rasm API: standart holatda KOVER=off. Rasm sinovlari KOVER ni olib tashlaydi.
+const rasmTavsiflari = [];
+let rasmApiXatosi = null;
+mock.module('../lib/kover-api.js', {
+  namedExports: {
+    yoqilganmi: () => true,
+    tavsifQur: (mavzu) => `TAVSIF(${mavzu})`,
+    yasa: async (tavsif) => {
+      if (rasmApiXatosi) throw new Error(rasmApiXatosi);
+      rasmTavsiflari.push(tavsif);
+      return { rasm: Buffer.from(`rasm-${rasmTavsiflari.length}`), mime: 'image/png' };
+    },
+  },
+});
+
 const kutilgan = [];
 mock.module('@vercel/functions', {
   namedExports: { waitUntil: (p) => kutilgan.push(p) },
@@ -121,6 +136,9 @@ beforeEach(() => {
   chaqiruvlar = [];
   keyingiId = 1000;
   copyXatosi = null;
+  rasmApiXatosi = null;
+  rasmTavsiflari.length = 0;
+  process.env.KOVER = 'off';
   aiChaqiruvlari.length = 0;
   process.env.EGA_ID = String(EGA);
   process.env.KANAL_ID = KANAL;
@@ -142,7 +160,7 @@ test('begona odam /post ishlata olmaydi', async () => {
 test('/post → tugmali post → Chiqar kanalga ko\'chiradi, ikkinchi bosish ishlamaydi', async () => {
   await yubor(xabar(EGA, '/post sayt'));
   const { data, message } = tugmaliXabar();
-  assert.deepEqual(Object.keys(data), ['✅ Chiqar', '✏️ Qayta yoz', '❌ Bekor']);
+  assert.deepEqual(Object.keys(data), ['✅ Chiqar', '✏️ Qayta yoz', '🎨 Yangi rasm', '❌ Bekor']);
   assert.equal(message.text, 'BIRINCHI POST\nsinov matni');
 
   chaqiruvlar = [];
@@ -171,7 +189,7 @@ test('kanalga chiqmasa sababini aytadi, tugmalarni qaytaradi va qayta urinish mu
   await yubor(bos(EGA, data['✅ Chiqar'], message));
   assert.ok(matnlar().some((m) => m.includes('chat not found')));
   const qaytgan = turi('editMessageReplyMarkup').at(-1).tana.reply_markup.inline_keyboard;
-  assert.equal(qaytgan.flat().length, 3);
+  assert.equal(qaytgan.flat().length, 4);
 
   copyXatosi = null;
   chaqiruvlar = [];
@@ -351,4 +369,72 @@ test('jurnal: harakat qisqartiriladi va | belgisi qatorni buzmaydi', async () =>
   const q = qatorYasa('yozuvchi', 'ishlayapti', `a | b\n${'x'.repeat(300)}`, new Date('2026-01-01T00:00:00Z'));
   assert.equal(q.split(' | ').length, 4);
   assert.ok(q.length < 200);
+});
+
+test('🎨 Yangi rasm: matn o\'sha, rasm yangidan chiziladi va yangi post tugmalar bilan keladi', async () => {
+  delete process.env.KOVER;
+  await korsat(EGA, {
+    id: 'yangirasm1', mavzu: 'sayt', natija: null, post: 'qisqa post',
+    rasm: Buffer.from('eski'), mime: 'image/png',
+  });
+  const eski = tugmaliXabar();
+
+  chaqiruvlar = [];
+  await yubor(bos(EGA, eski.data['🎨 Yangi rasm'], eski.message));
+
+  assert.equal(rasmTavsiflari.length, 1);
+  assert.equal(rasmTavsiflari[0], 'TAVSIF(sayt)');
+  assert.ok(matnlar().includes('🎨 Yangi rasm chizildi.'));
+  const photo = turi('sendPhoto')[0].tana;
+  assert.equal(photo.photo, '<fayl>', 'eski file_id emas, yangi fayl yuklanadi');
+  assert.equal(photo.caption, 'qisqa post');
+  assert.deepEqual(turi('editMessageReplyMarkup')[0].tana.message_id, eski.message.message_id);
+  assert.equal(aiChaqiruvlari.length, 0, 'matn qayta yozilmaydi');
+});
+
+test('Qayta yoz izohida rasm so\'ralsa, rasm ham izoh bilan qayta chiziladi', async () => {
+  delete process.env.KOVER;
+  await korsat(EGA, {
+    id: 'izohrasm1', mavzu: 'sayt', natija: null, post: 'qisqa post',
+    rasm: Buffer.from('eski'), mime: 'image/png',
+  });
+  const eski = tugmaliXabar();
+  await yubor(bos(EGA, eski.data['✏️ Qayta yoz'], eski.message));
+
+  chaqiruvlar = [];
+  await yubor(xabar(EGA, 'rasmni qaytadan generatsiya qilib ber, ko\'k rangda'));
+
+  assert.equal(rasmTavsiflari.length, 1);
+  assert.match(rasmTavsiflari[0], /ko'k rangda/);
+  const photo = turi('sendPhoto')[0].tana;
+  assert.equal(photo.photo, '<fayl>');
+  assert.equal(photo.caption, 'YANGI POST\nizoh bajarildi');
+});
+
+test('Qayta yoz izohida rasm tilga olinmasa, eski rasm qoladi', async () => {
+  delete process.env.KOVER;
+  await korsat(EGA, {
+    id: 'izohrasm2', mavzu: 'sayt', natija: null, post: 'qisqa post',
+    rasm: Buffer.from('eski'), mime: 'image/png',
+  });
+  const eski = tugmaliXabar();
+  await yubor(bos(EGA, eski.data['✏️ Qayta yoz'], eski.message));
+  chaqiruvlar = [];
+  await yubor(xabar(EGA, 'qisqaroq qil'));
+
+  assert.equal(rasmTavsiflari.length, 0);
+  assert.equal(turi('sendPhoto')[0].tana.photo, 'RASM_ID');
+});
+
+test('rasm API yiqilsa egasiga aytiladi — shablon bir xil chiqishi yashirilmaydi', async () => {
+  delete process.env.KOVER;
+  rasmApiXatosi = 'limit tugadi';
+  await korsat(EGA, {
+    id: 'yangirasm2', mavzu: 'sayt', natija: null, post: 'qisqa post',
+    rasm: Buffer.from('eski'), mime: 'image/png',
+  });
+  const eski = tugmaliXabar();
+  chaqiruvlar = [];
+  await yubor(bos(EGA, eski.data['🎨 Yangi rasm'], eski.message));
+  assert.ok(matnlar().some((m) => m.includes('Rasm API ishlamadi (limit tugadi)')));
 });
