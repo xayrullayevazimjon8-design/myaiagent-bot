@@ -198,7 +198,8 @@ curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
 ## Agentlar ofisi
 
 `https://myaiagent-bot.vercel.app/ofis` — pikselli 2D ofis: olti xona (qabulxona,
-kutubxona, majlis xonasi, tahririyat, studiya, dam olish), besh agent. Har agent
+kutubxona, majlis xonasi, tahririyat, studiya, dam olish), besh agent: Jarvis, Izquvar, Qalamkash, Nazoratchi, Moʻyqalam.
+Ichki kalitlari (jurnalda) — `jarvis`, `qidiruvchi`, `yozuvchi`, `muharrir`, `rasm`. Har agent
 holatiga qarab yurib boradi:
 
 | Holat | Qayerda |
@@ -210,10 +211,10 @@ holatiga qarab yurib boradi:
 | Agent | Joyi | Nima qiladi |
 |---|---|---|
 | Jarvis | Qabulxona | Chatda mijozga javob beradi |
-| Qidiruvchi | Kutubxona | `/post` uchun material qidiradi |
-| Yozuvchi | Tahririyat | Post yozadi |
-| Muharrir | Tahririyat | Postni tekshiradi |
-| Rassom | Studiya | Kover chizadi |
+| Izquvar | Kutubxona | `/post` uchun material qidiradi |
+| Qalamkash | Tahririyat | Post yozadi |
+| Nazoratchi | Tahririyat | Postni tekshiradi |
+| Moʻyqalam | Studiya | Kover chizadi |
 
 Agentni bossangiz — kartochka (to'liq harakat, qachon). 📋 — jurnal paneli,
 pastda — hamma agentning holati. `?demo=1` — soxta jurnal bilan namoyish.
